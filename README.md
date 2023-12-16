@@ -1,4 +1,4 @@
-# iclip-analysis
+# wf-iclipseq
 Nextflow pipeline for analyzing iCLIP data.
 
 # Pipeline
