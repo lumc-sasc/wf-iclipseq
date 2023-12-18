@@ -13,20 +13,9 @@ Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can 
 conda 23.9.0
 ```
 
-Set up the proper channels, e.g.:
+You can install Nextflow using [Bioconda](https://bioconda.github.io/), after setting up the proper channels: `conda install -c bioconda nextflow`
 
-`conda config --add channels defaults`
-
-`conda config --add channels bioconda`
-
-`conda config --add channels conda-forge`
-
-`conda config --set channel_priority strict`
-
-
-You can install Nextflow using: `conda install -c bioconda nextflow`
-
-Or a specific version: `conda install nextflow=23.10.0`
+Or a specific version: `conda install -c bioconda nextflow=23.10.0`
 
 Make sure to install Singularity from conda-forge and not bioconda, as conda-forge has a more recent version:
 

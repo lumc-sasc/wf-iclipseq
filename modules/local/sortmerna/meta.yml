@@ -37,6 +37,10 @@ output:
       type: file
       description: The filtered fastq reads
       pattern: "*fastq.gz"
+  - aligned_reads:
+      type: file
+      description: The aligned (rRNA) fastq reads
+      pattern: "*fastq.gz"
   - log:
       type: file
       description: SortMeRNA log file

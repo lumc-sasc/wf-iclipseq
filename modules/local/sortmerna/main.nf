@@ -10,7 +10,8 @@ process SORTMERNA {
     path  fastas
 
     output:
-    tuple val(meta), path("*non_rRNA.fastq.gz"), emit: reads
+    tuple val(meta), path("*non_rRNA.fastq.gz")    , emit: reads
+    tuple val(meta), path("*aligned_rRNA.fastq.gz"), emit: aligned_reads
     tuple val(meta), path("*.log")     , emit: log
     path  "versions.yml"               , emit: versions
 
@@ -33,6 +34,7 @@ process SORTMERNA {
             $args
 
         mv non_rRNA_reads.f*q.gz ${prefix}.non_rRNA.fastq.gz
+        mv rRNA_reads.f*q.gz ${prefix}.aligned_rRNA.fastq.gz
         mv rRNA_reads.log ${prefix}.sortmerna.log
 
         cat <<-END_VERSIONS > versions.yml
@@ -58,6 +60,8 @@ process SORTMERNA {
         mv non_rRNA_reads_fwd.f*q.gz ${prefix}_1.non_rRNA.fastq.gz
         mv non_rRNA_reads_rev.f*q.gz ${prefix}_2.non_rRNA.fastq.gz
         mv rRNA_reads.log ${prefix}.sortmerna.log
+        mv rRNA_reads_fwd.f*q.gz ${prefix}_1.aligned_rRNA.fastq.gz
+        mv rRNA_reads_rev.f*q.gz ${prefix}_2.aligned_rRNA.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

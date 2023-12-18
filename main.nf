@@ -65,7 +65,7 @@ include { PREPARE_GENOME                        } from './subworkflows/local/pre
 include { BOWTIE2_BUILD                         } from './modules/nf-core/bowtie2/build/main.nf'
 include { BOWTIE2_ALIGN                         } from './modules/nf-core/bowtie2/align/main.nf'
 include { ALIGN_STAR                            } from './subworkflows/local/align_star.nf'
-include { SORTMERNA                             } from './modules/nf-core/sortmerna/main.nf'
+include { SORTMERNA                             } from './modules/local/sortmerna/main.nf'
 include { HOMER_ANNOTATEPEAKS                   } from './modules/nf-core/homer/annotatepeaks/main.nf'
 
 // local modules
@@ -89,8 +89,20 @@ include { UCSC_BEDGRAPHTOBIGWIG as BEDGRAPHTOBIGWIG_NORM_NEG }  from './modules/
 // workflow
 workflow {
 
-      // TODO: check if input path parameters exist
-
+      // check if mandatory input path parameters exist
+      check_params = [
+            samplesheet: params.samplesheet,    // sheet with sample information
+            fasta: params.fasta,                // reference genome
+            gtf: params.gtf                     // gene annotation
+      ]
+      for (param in check_params){
+            if (!param.value) {
+                  exit 1, "Missing mandatory parameter: ${param.key}"
+            } 
+            else {
+                  file(param.value, checkIfExists: true)
+            }
+      }
 
       // empty channel for versions
       ch_versions            = Channel.empty()
@@ -215,7 +227,6 @@ workflow {
 
       // SUBWORKFLOW STAR ALIGN adapted from nf-core/rnaseq
       // STAR alignment
-      // check container versions
 
       // empty channels
       ch_genome_bam                 = Channel.empty()
@@ -358,7 +369,7 @@ workflow {
       
       }
 
-      // peakachu
+      // peakachu?
       if (!params.skip_peakachu) {
             placeholder = Channel.from(1,2)
       }
