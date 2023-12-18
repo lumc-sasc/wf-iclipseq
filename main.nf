@@ -145,7 +145,7 @@ workflow {
       // BOWTIE2 MODULES 
       // premapping
       ch_multiqc_bowtie2            = Channel.empty()
-      ch_filtered_reads = ch_trimmed_reads          // if premapping is skipped
+      ch_filtered_reads             = ch_trimmed_reads          // if premapping is skipped
       if (!params.skip_premapping) {
             ch_premap_fasta         = Channel.of(params.bw_fasta)
 
@@ -170,8 +170,7 @@ workflow {
 
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
-      ch_sortmerna_multiqc    = Channel.empty()          // empty channel for outputs
-
+      ch_sortmerna_multiqc          = Channel.empty()
 
       if (params.remove_ribo_rna) {
             // check for rRNA databases for sortmerna
@@ -180,7 +179,7 @@ workflow {
             // put databases in a channel
             ch_sortmerna_fastas = Channel.from(ch_ribo_db.readLines()).map { row -> file(row, checkIfExists: true) }.collect()
 
-            SORTMERNA ( ch_trimmed_reads, ch_sortmerna_fastas ) // run sortmerna
+            SORTMERNA ( ch_filtered_reads, ch_sortmerna_fastas ) // run sortmerna
             .reads // get emit: reads
             .set {ch_filtered_reads} // rename read data (after rRNA filtering)
             
@@ -356,7 +355,27 @@ workflow {
 
             pureclip_crosslink_sites      = PURECLIP.out.sites_bed
             pureclip_crosslink_regions    = PURECLIP.out.regions_bed
+      
+      }
 
+      // peakachu
+      if (!params.skip_peakachu) {
+            placeholder = Channel.from(1,2)
+      }
+
+      // maybe paraclu
+
+
+      
+
+
+      // possibly clippy and PEKA
+
+
+
+      // add dreme
+
+      if (!params.skip_homer_annotation) {
       // homer annotatepeaks
             HOMER_ANNOTATEPEAKS (
                   pureclip_crosslink_regions, // peak regions
@@ -412,12 +431,8 @@ workflow {
                   // premapping
                   ch_multiqc_bowtie2.collect{it[1]}.ifEmpty([])
 
-
             ) // run multiqc
-
       }
-
-
 
 }
 
