@@ -4,7 +4,7 @@ Nextflow pipeline for analyzing iCLIP data.
 # Pipeline
 TBA: workflow overview.
 
-# Usage
+# Requirements
 Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can be installed using Conda. To download Conda, follow this [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html). Check that Conda is up-to-date:
 
 `conda --version`
@@ -50,7 +50,7 @@ Check the version of the programs to confirm you have a decently up-to-date prog
 singularity version 3.8.6
 ```
 
-# Running the pipeline
+# Usage
 Running the pipeline can be done by using the `nextflow run main.nf` command *after mandatory parameters have been provided.*
 TBA: add mandatory parameters.
 
