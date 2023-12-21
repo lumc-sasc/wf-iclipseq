@@ -27,12 +27,10 @@ process PURECLIP {
         -i $bam \\
         -bai $bai \\
         -g $fasta \\
-        -ld \\
         -nt 8 \\
-        -iv 'chr1;chr2;chr3;' \\
         $args \\
-        -o PureCLIP.${prefix}.crosslink_sites.bed> \\
-        -or PureCLIP.${prefix}.crosslink_regions.bed>
+        -o pureclip.${prefix}.crosslink_sites.bed \\
+        -or pureclip.${prefix}.crosslink_regions.bed
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
