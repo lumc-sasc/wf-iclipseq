@@ -33,8 +33,8 @@ process SORTMERNA {
             --other non_rRNA_reads \\
             $args
 
-        mv non_rRNA_reads.f*q.gz ${prefix}.non_rRNA.fastq.gz
-        mv rRNA_reads.f*q.gz ${prefix}.aligned_rRNA.fastq.gz
+        mv non_rRNA_reads.f*q.gz ${prefix}_non_rRNA.fastq.gz
+        mv rRNA_reads.f*q.gz ${prefix}_aligned_rRNA.fastq.gz
         mv rRNA_reads.log ${prefix}.sortmerna.log
 
         cat <<-END_VERSIONS > versions.yml
