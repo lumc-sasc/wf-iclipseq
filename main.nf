@@ -28,13 +28,17 @@ READ TO DISCARD AFTER BARCODE EXTR.       : $params.umi_discard_read
 MIN # TRIMMED READS SAMPLE REMOVAL        : $params.min_trimmed_reads
 SKIP PRE-MAPPING                          : $params.skip_premapping
 DO SORTMERNA                              : $params.remove_ribo_rna
+SKIP RIBODETECTOR                         : $params.skip_ribodetector
 SKIP FASTQC AFTER rRNA FILTERING          : $params.skip_fastqc_after_ribo_removal
 SKIP ALIGNMENT (AND DEDUP)                : $params.skip_alignment
 ANALYSE UNMAPPED                          : $params.analyse_unmapped 
 SKIP FASTQC AFTER DEDUPLICATION           : $params.skip_fastqc_after_dedup
 SKIP EXTRACT CROSSLINKS                   : $params.skip_extract_crosslinks
 SKIP BEDGRAPH TO BIGWIG FILE CONVERSION   : $params.skip_bedgraphtobigwig
+SKIP ICLIPRO                              : $params.skip_iclipro
 SKIP PURECLIP                             : $params.skip_pureclip
+SKIP PROCESSING PURECLIP DATA             : $params.skip_process_pureclip
+SKIP CLIPPY AND PEKA                      : $params.skip_clippy_and_peka
 SKIP MULTIQC                              : $params.skip_multiqc
 ================================
       IMPORTANT PROCESS PARAMS          
@@ -45,7 +49,7 @@ umitools_umi_separator                    : $params.umitools_umi_separator
 save_edited_reads                         : $params.save_edited_reads
 save_umi_intermeds (UMI-Tools)            : $params.save_umi_intermeds
 save_trimmed (TrimGalore)                 : $params.save_trimmed
-save_non_ribo_reads (SortMeRNA)           : $params.save_non_ribo_reads
+save ribo and non_ribo reads (SortMeRNA)  : $params.save_non_ribo_reads
 save_reference (STAR)                     : $params.save_reference
 save_unaligned (STAR)                     : $params.save_unaligned
 save_align_intermeds (STAR)               : $params.save_align_intermeds
@@ -66,11 +70,20 @@ include { BOWTIE2_BUILD                         } from './modules/nf-core/bowtie
 include { BOWTIE2_ALIGN                         } from './modules/nf-core/bowtie2/align/main.nf'
 include { ALIGN_STAR                            } from './subworkflows/local/align_star.nf'
 include { SORTMERNA                             } from './modules/local/sortmerna/main.nf'
-include { HOMER_ANNOTATEPEAKS                   } from './modules/nf-core/homer/annotatepeaks/main.nf'
+include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_PURECLIP          } from './modules/local/homer/annotatepeaks/main.nf'
+include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_MACS2              } from './modules/local/homer/annotatepeaks/main.nf'
+include { CLIPPY                                } from './modules/goodwright/clippy/main.nf'
+include { PEKA                                  } from './modules/goodwright/peka/main.nf'
+include { MACS2_CALLPEAK                        } from './modules/nf-core/macs2/callpeak/main.nf'
+
 
 // local modules
+include { ICLIPRO                               } from './modules/local/iclipro.nf'
 include { PURECLIP                              } from './modules/local/pureclip.nf'
+include { PROCESS_PURECLIP                      } from './modules/local/process_pureclip.nf'
 include { MULTIQC                               } from './modules/local/multiqc/main.nf'
+include { RIBODETECTOR                          } from './modules/local/ribodetector.nf' // not used at the moment
+
 
 // nf-core subworkflows only
 include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME        } from './subworkflows/nf-core/bam_dedup_stats_samtools_umitools/main.nf'
@@ -86,7 +99,7 @@ include { UCSC_BEDGRAPHTOBIGWIG as BEDGRAPHTOBIGWIG_RAW_NEG }   from './modules/
 include { UCSC_BEDGRAPHTOBIGWIG as BEDGRAPHTOBIGWIG_NORM_NEG }  from './modules/local/ucsc/bedgraphtobigwig/main.nf'
 
 
-// workflow
+
 workflow {
 
       // check if mandatory input path parameters exist
@@ -107,6 +120,9 @@ workflow {
       // empty channel for versions
       ch_versions            = Channel.empty()
 
+      /*
+            STEP 0: load data 
+      */
 
       // SUBWORKFLOW INPUT_CHECK from nf-core/rnaseq
       // checks the samplesheet for correct format, extracts meta map and read path to channel
@@ -115,6 +131,9 @@ workflow {
       .set { ch_reads }
       ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
+      /*
+            STEP 1: preprocessing 
+      */
 
       // SUBWORKFLOW (local)
       // replace whitespaces and special characters
@@ -179,7 +198,6 @@ workflow {
             ch_version              = ch_versions.mix(BOWTIE2_ALIGN.out.versions)
       }
 
-
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
       ch_sortmerna_multiqc          = Channel.empty()
@@ -220,10 +238,14 @@ workflow {
             params.gtf,
             params.star_index
             )
-            ch_chrom_sizes = PREPARE_GENOME.out.chrom_sizes
+            ch_fasta       = PREPARE_GENOME.out.fasta             // channel: [ fasta ]
+            ch_chrom_sizes = PREPARE_GENOME.out.chrom_sizes       // channel: [ chrom_sizes ]
             ch_versions = ch_versions.mix(PREPARE_GENOME.out.versions)
       }
 
+      /*
+            STEP 2: post-processing 
+      */
 
       // SUBWORKFLOW STAR ALIGN adapted from nf-core/rnaseq
       // STAR alignment
@@ -319,7 +341,7 @@ workflow {
       // TODO: extract crosslinks 
       if (!params.skip_alignment && !params.skip_extract_crosslinks) {
             EXTRACT_CROSSLINKS (
-                  BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME.out.bam,
+                  ch_genome_bam,
                   ch_chrom_sizes
             )
             ch_merged_bed                  = EXTRACT_CROSSLINKS.out.merged_bed
@@ -352,7 +374,16 @@ workflow {
 
       // TODO?: check insertions and deletions (Busch et al) 
 
+
+      /*
+            STEP 3: analysis 
+      */
+
+
       // TODO: iCLIPro
+      if (!params.skip_iclipro) {
+            ICLIPRO ( ch_genome_bam )
+      }
 
 
       // TODO: peak calling
@@ -366,30 +397,68 @@ workflow {
 
             pureclip_crosslink_sites      = PURECLIP.out.sites_bed
             pureclip_crosslink_regions    = PURECLIP.out.regions_bed
-      
+
+            // does not work due to container issue --> mulled
+            if (!params.skip_process_pureclip) {
+                  PROCESS_PURECLIP (
+                        BEDGRAPHTOBIGWIG_RAW_POS.out.bigwig,
+                        BEDGRAPHTOBIGWIG_RAW_NEG.out.bigwig,
+                        pureclip_crosslink_sites
+                  )
+            }
       }
 
-      // peakachu?
-      if (!params.skip_peakachu) {
-            placeholder = Channel.from(1,2)
+      // piranha? paraclu?
+
+
+      // TODO: MACS2, a broad peak caller
+      ch_control = Channel.fromPath('published_iclip/total_rna/results/star/umitools/bam/TOTAL_BT1_3_3_T1.umi_dedup.sorted.bam')
+      ch_ip_control_bam = ch_genome_bam.combine(ch_control) // should be: [ meta, ip_bam, control_bam ]
+     
+      MACS2_CALLPEAK ( 
+            ch_ip_control_bam,  
+            'hs'
+      )
+      ch_macs2_peaks    = MACS2_CALLPEAK.out.peak // output misses 6th column with strand information because macs2 does not output it
+      ch_versions       = ch_versions.mix(MACS2_CALLPEAK.out.versions.first())
+
+
+
+      // clippy and PEKA
+      // if (!params.skip_clippy_and_peka) {
+      //       CLIPPY (
+      //             ch_merged_bed,
+      //             PREPARE_GENOME.out.gtf,
+      //             PREPARE_GENOME.out.fai
+      //       )
+      //       ch_versions = ch_versions.mix(CLIPPY.out.versions)
+
+            /*
+            * MODULE: Run PEKA on genome-level peaks
+            */
+            // PEKA (
+            //       pureclip_crosslink_sites, // CLIPPY.out.peaks, // peaks
+            //       ch_merged_bed, // crosslinks
+            //       PREPARE_GENOME.out.fasta,
+            //       PREPARE_GENOME.out.fai,
+            //       PREPARE_GENOME.out.gtf
+            // )
+            // ch_versions = ch_versions.mix(PEKA.out.versions)
       }
 
-      // maybe paraclu
-
-
-      
-
-
-      // possibly clippy and PEKA
-
-
-
-      // add dreme
 
       if (!params.skip_homer_annotation) {
       // homer annotatepeaks
-            HOMER_ANNOTATEPEAKS (
-                  pureclip_crosslink_regions, // peak regions
+            HOMER_ANNOTATEPEAKS_PURECLIP (
+                  'pureclip',
+                  pureclip_crosslink_sites, // peak sites
+                  PREPARE_GENOME.out.fasta,
+                  PREPARE_GENOME.out.gtf
+            )
+
+            HOMER_ANNOTATEPEAKS_MACS2 (
+                  'macs2',
+                  ch_macs2_peaks, // peak sites
                   PREPARE_GENOME.out.fasta,
                   PREPARE_GENOME.out.gtf
             )
@@ -441,6 +510,7 @@ workflow {
 
                   // premapping
                   ch_multiqc_bowtie2.collect{it[1]}.ifEmpty([])
+
 
             ) // run multiqc
       }
