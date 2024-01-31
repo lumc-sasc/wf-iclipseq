@@ -7,7 +7,7 @@ import argparse
 
 
 def parse_args(args=None):
-    Description = "Reformat nf-core/rnaseq samplesheet file and check its contents."
+    Description = "Reformat lumc-sasc/wf-iclipseq samplesheet file and check its contents."
     Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT>"
 
     parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
@@ -38,9 +38,10 @@ def check_samplesheet(file_in, file_out):
     This function checks that the samplesheet follows the following structure:
 
     sample,fastq_1,fastq_2,strandedness
-    SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz,forward
-    SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz,forward
-    SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,forward
+    SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz,CONTROL.bam,CONTROL.bai
+    SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
+    SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,CONTROL.bam,CONTROL.bai
+    SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,,
 
     For an example see:
     https://github.com/nf-core/test-datasets/blob/rnaseq/samplesheet/v3.1/samplesheet_test.csv
@@ -49,8 +50,8 @@ def check_samplesheet(file_in, file_out):
     sample_mapping_dict = {}
     with open(file_in, "r", encoding="utf-8-sig") as fin:
         ## Check header
-        MIN_COLS = 3
-        HEADER = ["sample", "fastq_1", "fastq_2", "strandedness"]
+        MIN_COLS = 2
+        HEADER = ["sample", "fastq_1", "fastq_2", "control_bam", "control_bai"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
             print(f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}")
@@ -78,7 +79,7 @@ def check_samplesheet(file_in, file_out):
                     )
 
                 ## Check sample name entries
-                sample, fastq_1, fastq_2, strandedness = lspl[: len(HEADER)]
+                sample, fastq_1, fastq_2, control_bam, control_bai = lspl[: len(HEADER)]
                 if sample.find(" ") != -1:
                     print(f"WARNING: Spaces have been replaced by underscores for sample: {sample}")
                     sample = sample.replace(" ", "_")
@@ -97,32 +98,38 @@ def check_samplesheet(file_in, file_out):
                                 line,
                             )
 
-                ## Check strandedness
-                strandednesses = ["unstranded", "forward", "reverse", "auto"]
-                if strandedness:
-                    if strandedness not in strandednesses:
+                ## Check control_bam file extension
+                if control_bam:
+                    if control_bam.find(" ") != -1:
+                        print_error("FastQ file contains spaces!", "Line", line)
+                    if not control_bam.endswith(".bam"):
                         print_error(
-                            f"Strandedness must be one of '{', '.join(strandednesses)}'!",
+                            "Control bam file does not have extension '.bam'!",
                             "Line",
                             line,
                         )
-                else:
-                    print_error(
-                        f"Strandedness has not been specified! Must be one of {', '.join(strandednesses)}.",
-                        "Line",
-                        line,
-                    )
+
+                ## Check control_bai extension
+                if control_bai:
+                    if control_bai.find(" ") != -1:
+                        print_error("FastQ file contains spaces!", "Line", line)
+                    if not control_bai.endswith(".bai"):
+                        print_error(
+                            "Control bam file does not have extension '.bai'!",
+                            "Line",
+                            line,
+                        )                        
 
                 ## Auto-detect paired-end/single-end
                 sample_info = []  ## [single_end, fastq_1, fastq_2, strandedness]
                 if sample and fastq_1 and fastq_2:  ## Paired-end short reads
-                    sample_info = ["0", fastq_1, fastq_2, strandedness]
+                    sample_info = ["0", fastq_1, fastq_2, control_bam, control_bai]
                 elif sample and fastq_1 and not fastq_2:  ## Single-end short reads
-                    sample_info = ["1", fastq_1, fastq_2, strandedness]
+                    sample_info = ["1", fastq_1, fastq_2, control_bam, control_bai]
                 else:
                     print_error("Invalid combination of columns provided!", "Line", line)
 
-                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, strandedness ]]}
+                ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, control_bam, control_bai ]]}
                 sample_info = sample_info + lspl[len(HEADER) :]
                 if sample not in sample_mapping_dict:
                     sample_mapping_dict[sample] = [sample_info]
@@ -138,21 +145,13 @@ def check_samplesheet(file_in, file_out):
         make_dir(out_dir)
         with open(file_out, "w") as fout:
             fout.write(
-                ",".join(["sample", "single_end", "fastq_1", "fastq_2", "strandedness"] + header[len(HEADER) :]) + "\n"
+                ",".join(["sample", "single_end", "fastq_1", "fastq_2", "control_bam", "control_bai"] + header[len(HEADER) :]) + "\n"
             )
             for sample in sorted(sample_mapping_dict.keys()):
                 ## Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
                 if not all(x[0] == sample_mapping_dict[sample][0][0] for x in sample_mapping_dict[sample]):
                     print_error(
                         f"Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end!",
-                        "Sample",
-                        sample,
-                    )
-
-                ## Check that multiple runs of the same sample are of the same strandedness
-                if not all(x[3] == sample_mapping_dict[sample][0][3] for x in sample_mapping_dict[sample]):
-                    print_error(
-                        f"Multiple runs of a sample must have the same strandedness!",
                         "Sample",
                         sample,
                     )
