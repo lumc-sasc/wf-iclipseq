@@ -21,12 +21,21 @@ process PURECLIP {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def control_bam = ''
+    def control_bai = ''
+    if (meta.control_bam != ' ' && meta.control_bai != ' '){
+        control_bam = "-ibam ${meta.control_bam}"
+        control_bai = "-ibai ${meta.control_bai}"
+    } 
+
     """
     pureclip \\
         -i $bam \\
         -bai $bai \\
         -g $fasta \\
-        -nt 1 \\
+        -nt ${task.cpus} \\
+        $control_bam \\
+        $control_bai \\
         $args \\
         -o ${prefix}_pureclip_crosslink_sites_bed7.bed \\
         -or ${prefix}_pureclip_crosslink_regions.bed
