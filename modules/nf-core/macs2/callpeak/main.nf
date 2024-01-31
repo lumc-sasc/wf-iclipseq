@@ -2,12 +2,13 @@ process MACS2_CALLPEAK {
     tag "$meta.id"
     label 'process_medium'
 
+    // https://github.com/macs3-project/MACS/blob/release_v2.2.7.1/README.md
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/macs2:2.2.7.1--py38h4a8c8d9_3' :
         'biocontainers/macs2:2.2.7.1--py38h4a8c8d9_3' }"
 
     input:
-    tuple val(meta), path(ipbam), path(controlbam)
+    tuple val(meta), path(ipbam)
     val   macs2_gsize
 
     output:
@@ -27,7 +28,11 @@ process MACS2_CALLPEAK {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args_list = args.tokenize()
     def format    = meta.single_end ? 'BAM' : 'BAMPE'
-    def control   = controlbam ? "--control $controlbam" : ''
+    def control = ''
+    if (meta.control_bam != ' '){
+        control = "--control ${meta.control_bam}"
+    } 
+    // def control   = "${meta.control_bam}" ? "--control ${meta.control_bam}" : ' '
     if(args_list.contains('--format')){
         def id = args_list.findIndexOf{it=='--format'}
         format = args_list[id+1]
