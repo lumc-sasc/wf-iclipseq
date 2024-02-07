@@ -32,7 +32,9 @@ process HOMER_ANNOTATEPEAKS {
         -gtf $gtf \\
         -cpu $task.cpus \\
         -go gene_ontology.txt \\
-        > ${caller}_${prefix}.annotatePeaks.txt
+        > ${caller}_${prefix}_annotatePeaks.txt
+    
+    mv annStats.txt ${caller}_${prefix}_annStats.txt
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
