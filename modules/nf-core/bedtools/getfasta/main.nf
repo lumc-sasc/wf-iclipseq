@@ -6,11 +6,11 @@ process BEDTOOLS_GETFASTA {
         'biocontainers/bedtools:2.31.1--hf5e1c6e_0' }"
 
     input:
-    path bed
+    tuple val(meta), path(bed) // adjusted by me
     path fasta
 
     output:
-    path "*.fa"         , emit: fasta
+    tuple val(meta), path("*.fa"), emit: peak_fasta // adjusted by me
     path "versions.yml" , emit: versions
 
     when:

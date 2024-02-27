@@ -35,10 +35,7 @@ ANALYSE UNMAPPED                          : $params.analyse_unmapped
 SKIP FASTQC AFTER DEDUPLICATION           : $params.skip_fastqc_after_dedup
 SKIP EXTRACT CROSSLINKS                   : $params.skip_extract_crosslinks
 SKIP BEDGRAPH TO BIGWIG FILE CONVERSION   : $params.skip_bedgraphtobigwig
-SKIP ICLIPRO                              : $params.skip_iclipro
 SKIP PURECLIP                             : $params.skip_pureclip
-SKIP PROCESSING PURECLIP DATA             : $params.skip_process_pureclip
-SKIP CLIPPY AND PEKA                      : $params.skip_clippy_and_peka
 SKIP MULTIQC                              : $params.skip_multiqc
 ================================
       IMPORTANT PROCESS PARAMS          
@@ -60,7 +57,7 @@ NOTE: In its current state the pipeline may NOT work entirely if some processes 
 
 // modules adapted from nf-core and already existing pipelines (rnaseq, etc)
 // modules from existing pipelines are loose in subworkflows/nf-core 
-include { INPUT_CHECK                           } from './subworkflows/nf-core/input_check.nf'
+include { INPUT_CHECK                           } from './subworkflows/local/input_check.nf'
 include { FASTQC as FASTQC_AFTER_SORTMERNA      } from './modules/nf-core/fastqc/main.nf'
 include { FASTQC as FASTQC_AFTER_DEDUP          } from './modules/nf-core/fastqc/main.nf'
 include { FASTQ_FASTQC_UMITOOLS_TRIMGALORE      } from './subworkflows/nf-core/fastq_fastqc_umitools_trimgalore/main.nf'
@@ -72,18 +69,13 @@ include { ALIGN_STAR                            } from './subworkflows/local/ali
 include { SORTMERNA                             } from './modules/local/sortmerna/main.nf'
 include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_PURECLIP          } from './modules/local/homer/annotatepeaks/main.nf'
 include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_MACS2              } from './modules/local/homer/annotatepeaks/main.nf'
-include { CLIPPY                                } from './modules/goodwright/clippy/main.nf'
-include { PEKA                                  } from './modules/goodwright/peka/main.nf'
 include { MACS2_CALLPEAK                        } from './modules/nf-core/macs2/callpeak/main.nf'
 
 
 // local modules
-include { ICLIPRO                               } from './modules/local/iclipro.nf'
 include { PURECLIP                              } from './modules/local/pureclip.nf'
-include { PROCESS_PURECLIP                      } from './modules/local/process_pureclip.nf'
 include { MULTIQC                               } from './modules/local/multiqc/main.nf'
 include { RIBODETECTOR                          } from './modules/local/ribodetector.nf' // not used at the moment
-
 
 // nf-core subworkflows only
 include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME        } from './subworkflows/nf-core/bam_dedup_stats_samtools_umitools/main.nf'
@@ -91,6 +83,7 @@ include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS
 // local subworkflows
 include { REMOVE_CHARACTERS                     } from './subworkflows/local/remove_characters.nf'
 include { EXTRACT_CROSSLINKS                    } from './subworkflows/local/extract_crosslinks.nf'
+include { MOTIF_ANALYSIS                         } from './subworkflows/local/motif_analysis.nf'
 
 // neg and pos separately
 include { UCSC_BEDGRAPHTOBIGWIG as BEDGRAPHTOBIGWIG_RAW_POS }   from './modules/local/ucsc/bedgraphtobigwig/main.nf'
@@ -143,7 +136,6 @@ workflow {
             .set { ch_reads }
             ch_versions = ch_versions.mix(REMOVE_CHARACTERS.out.versions)
       }
-
 
 
       // SUBWORKFLOW FASTQC + UMITOOLS + TRIMGALORE (CUTADAPT)
@@ -323,7 +315,6 @@ workflow {
       }
 
 
-
       // MODULE FASTQC
       // do quality control on data after deduplication
       ch_fastqc_dedup_multiqc = Channel.empty()
@@ -336,9 +327,7 @@ workflow {
       }
 
 
-
       // SUBWORKFLOW from local, but based on/adapted from goodwright/clipseq, Busch et al (2020) and nf-core
-      // TODO: extract crosslinks 
       if (!params.skip_alignment && !params.skip_extract_crosslinks) {
             EXTRACT_CROSSLINKS (
                   ch_genome_bam,
@@ -359,8 +348,6 @@ workflow {
 
 
             // MODULE from nf-core
-            // bigwig files can be used as input for IGV
-            // https://support.illumina.com/content/dam/illumina-support/help/Illumina_DRAGEN_Bio_IT_Platform_v3_7_1000000141465/Content/SW/Informatics/Dragen/CNVVisualization%20and%20BigWigFiles_fDG_dtSW.htm
             if (!params.skip_bedgraphtobigwig) {
                   BEDGRAPHTOBIGWIG_RAW_POS       ( ch_pos_coverage, ch_chrom_sizes )
                   BEDGRAPHTOBIGWIG_NORM_POS      ( ch_pos_coverage_normalized, ch_chrom_sizes )
@@ -370,105 +357,63 @@ workflow {
             }
       }
 
-      // TODO: library complexity
-
-      // TODO?: check insertions and deletions (Busch et al) 
-
-
       /*
             STEP 3: analysis 
       */
 
-
-      // TODO: iCLIPro
-      if (!params.skip_iclipro) {
-            ICLIPRO ( ch_genome_bam )
-      }
-
-
-      // TODO: peak calling
-      // pureclip 
       if (!params.skip_pureclip) {
             PURECLIP ( 
                   ch_genome_bam,
                   ch_genome_bam_index,
                   PREPARE_GENOME.out.fasta
             )
-
             pureclip_crosslink_sites      = PURECLIP.out.sites_bed
             pureclip_crosslink_regions    = PURECLIP.out.regions_bed
-
-            // does not work due to container issue --> mulled
-            if (!params.skip_process_pureclip) {
-                  PROCESS_PURECLIP (
-                        BEDGRAPHTOBIGWIG_RAW_POS.out.bigwig,
-                        BEDGRAPHTOBIGWIG_RAW_NEG.out.bigwig,
-                        pureclip_crosslink_sites
-                  )
-            }
       }
 
-      // piranha? paraclu?
-
-
-      // TODO: MACS2, a broad peak caller
-      ch_control = Channel.fromPath('published_iclip/total_rna/results/star/umitools/bam/TOTAL_BT1_3_3_T1.umi_dedup.sorted.bam')
-      ch_ip_control_bam = ch_genome_bam.combine(ch_control) // should be: [ meta, ip_bam, control_bam ]
-     
-      MACS2_CALLPEAK ( 
-            ch_ip_control_bam,  
-            'hs'
-      )
-      ch_macs2_peaks    = MACS2_CALLPEAK.out.peak // output misses 6th column with strand information because macs2 does not output it
-      ch_versions       = ch_versions.mix(MACS2_CALLPEAK.out.versions.first())
-
-
-
-      // clippy and PEKA
-      // if (!params.skip_clippy_and_peka) {
-      //       CLIPPY (
-      //             ch_merged_bed,
-      //             PREPARE_GENOME.out.gtf,
-      //             PREPARE_GENOME.out.fai
-      //       )
-      //       ch_versions = ch_versions.mix(CLIPPY.out.versions)
-
-            /*
-            * MODULE: Run PEKA on genome-level peaks
-            */
-            // PEKA (
-            //       pureclip_crosslink_sites, // CLIPPY.out.peaks, // peaks
-            //       ch_merged_bed, // crosslinks
-            //       PREPARE_GENOME.out.fasta,
-            //       PREPARE_GENOME.out.fai,
-            //       PREPARE_GENOME.out.gtf
-            // )
-            // ch_versions = ch_versions.mix(PEKA.out.versions)
+      // MACS2, a broad peak caller
+      if (!params.skip_macs2) {
+            MACS2_CALLPEAK ( 
+                  ch_genome_bam,  
+                  'hs' // add as param?
+            )
+            ch_macs2_peaks    = MACS2_CALLPEAK.out.peak 
+            ch_versions       = ch_versions.mix(MACS2_CALLPEAK.out.versions.first())
       }
 
+      // DOES BEDTOOLS SLOP COME BEFORE OR AFTER HOMER ANNOTATION?
 
       if (!params.skip_homer_annotation) {
       // homer annotatepeaks
-            HOMER_ANNOTATEPEAKS_PURECLIP (
-                  'pureclip',
-                  pureclip_crosslink_sites, // peak sites
-                  PREPARE_GENOME.out.fasta,
-                  PREPARE_GENOME.out.gtf
-            )
+            if (!params.skip_pureclip){
+                  HOMER_ANNOTATEPEAKS_PURECLIP (
+                        'pureclip',
+                        pureclip_crosslink_sites,
+                        PREPARE_GENOME.out.fasta,
+                        PREPARE_GENOME.out.gtf
+                  )
+                  ch_versions       = ch_versions.mix(HOMER_ANNOTATEPEAKS_PURECLIP.out.versions.first())
+            }
 
-            HOMER_ANNOTATEPEAKS_MACS2 (
-                  'macs2',
-                  ch_macs2_peaks, // peak sites
-                  PREPARE_GENOME.out.fasta,
-                  PREPARE_GENOME.out.gtf
-            )
+            if (!params.skip_macs2) {
+                  HOMER_ANNOTATEPEAKS_MACS2 (
+                        'macs2',
+                        ch_macs2_peaks,
+                        PREPARE_GENOME.out.fasta,
+                        PREPARE_GENOME.out.gtf
+                  )
+                  ch_versions       = ch_versions.mix(HOMER_ANNOTATEPEAKS_MACS2.out.versions.first())
+            }
       }
 
       // TODO: further analysis
 
-
-
-
+      // motif analysis using STREME
+      MOTIF_ANALYSIS (
+            pureclip_crosslink_sites,
+            ch_chrom_sizes,
+            ch_fasta
+      )
 
       // MODULE MULTIQC
       // make multiqc report
