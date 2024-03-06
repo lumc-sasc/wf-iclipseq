@@ -40,11 +40,54 @@ singularity version 3.8.6
 ```
 
 # Usage
-Running the pipeline can be done by using the `nextflow run main.nf` command *after mandatory parameters have been provided.*
-TBA: add mandatory parameters.
+## Installation
+To download the repository, you can use:
+
+```
+git clone https://github.com/lumc-sasc/wf-iclipseq.git
+```
+## Execution
+It is mandatory to provide a **samplesheet.csv** in the `input/` folder that has 5 columns and may look like this:
+
+```
+sample,fastq_1,fastq_2,control_bam,control_bai
+s_1,/path/to/fastq.gz/,,,
+s_2,/path/to/R1_fastq.gz/,/path/to/R2_fastq.gz/,,
+s_3,/path/to/fastq.gz/,,/path/to/input.bam,/path/to/input.bai
+```
+Those in **bold** are mandatory to run the pipeline.
+- **sample**: sample name, make sure it does not contain periods as that may cause errors
+- **fastq_1**: a demultiplexed fastq.gz file
+- fastq_2: a second demultiplexed fastq.gz file, in case of paired-end reads
+- control_bam: .bam file of input/control data (used for peak calling with PureCLIP/MACS2)
+- control_bai: .bai file of input/control data (used for peak calling with PureCLIP)
+
+If control_bam is provided, it is imperative that control_bai is provided as well!
+
+By default, the reference genome and annotation are specified in the `conf/params.config`
+```
+fasta                      = "https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz"
+gtf                        = "https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz"
+```
+
+Finally, you can run the pipeline using the following command:
+```
+nextflow run main.nf
+```
+If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
+
+# Errors
+- exit code 137 occurs when the memory limit of a process has been exceeded. Especially SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources` file.
+- PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
 
 # Future work
-This project is currently ongoing.
+This project is currently ongoing. Possible improvements include:
+
+- Benchmarking
+- Including a test case
+- Compatibility with other container runtimes (e.g. Docker, Appcontainer, conda) to improve accessibility (currently only Singularity is supported)
+- Testing and improving performance (runtime, speed, resources)
+- Error testing
 
 # Authors
 This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows.
