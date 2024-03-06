@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# adjusted from nf-core/rnaseq
+
 import os
 import sys
 import errno
@@ -42,9 +44,6 @@ def check_samplesheet(file_in, file_out):
     SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
     SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,CONTROL.bam,CONTROL.bai
     SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,,
-
-    For an example see:
-    https://github.com/nf-core/test-datasets/blob/rnaseq/samplesheet/v3.1/samplesheet_test.csv
     """
 
     sample_mapping_dict = {}
