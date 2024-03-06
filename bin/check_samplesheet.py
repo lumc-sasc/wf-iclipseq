@@ -39,7 +39,7 @@ def check_samplesheet(file_in, file_out):
     """
     This function checks that the samplesheet follows the following structure:
 
-    sample,fastq_1,fastq_2,strandedness
+    sample,fastq_1,fastq_2,control_bam, control_bai
     SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz,CONTROL.bam,CONTROL.bai
     SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
     SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,,CONTROL.bam,CONTROL.bai
@@ -120,7 +120,7 @@ def check_samplesheet(file_in, file_out):
                         )                        
 
                 ## Auto-detect paired-end/single-end
-                sample_info = []  ## [single_end, fastq_1, fastq_2, strandedness]
+                sample_info = []  ## [single_end, fastq_1, fastq_2, control_bam, control_bai]
                 if sample and fastq_1 and fastq_2:  ## Paired-end short reads
                     sample_info = ["0", fastq_1, fastq_2, control_bam, control_bai]
                 elif sample and fastq_1 and not fastq_2:  ## Single-end short reads
