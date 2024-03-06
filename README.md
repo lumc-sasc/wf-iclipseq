@@ -64,7 +64,7 @@ Those in **bold** are mandatory to run the pipeline.
 
 If control_bam is provided, it is imperative that control_bai is provided as well!
 
-By default, the reference genome and annotation are specified in the `conf/params.config`
+By default, the reference genome and annotation are specified in the `conf/params.config`. You can use these and move on to running the pipeline or you can replace these with your own.
 ```
 fasta                      = "https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz"
 gtf                        = "https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz"
@@ -77,7 +77,7 @@ nextflow run main.nf
 If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
 
 # Errors
-- exit code 137 occurs when the memory limit of a process has been exceeded. Especially SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources` file.
+- exit code 137 occurs when the memory limit of a process has been exceeded. Especially SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources.config` file.
 - PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
 
 # Future work
