@@ -13,6 +13,12 @@ Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can 
 conda 23.9.0
 ```
 
+Make a conda environment to download the packages in and activate it:
+```
+conda create -n nf_env
+conda activate nf_env
+```
+
 You can install Nextflow using [Bioconda](https://bioconda.github.io/), after setting up the proper channels: `conda install -c bioconda nextflow`
 
 Or a specific version: `conda install -c bioconda nextflow=23.10.0`
@@ -77,7 +83,7 @@ nextflow run main.nf
 If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
 
 # Errors
-- exit code 137 occurs when the memory limit of a process has been exceeded. Especially SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources.config` file.
+- exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources.config` file.
 - PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
 
 # Future work
