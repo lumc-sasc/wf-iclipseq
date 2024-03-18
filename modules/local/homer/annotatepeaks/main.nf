@@ -15,7 +15,7 @@ process HOMER_ANNOTATEPEAKS {
     output:
     tuple val(meta), path("*annotatePeaks.txt"), emit: txt
     tuple val(meta), path("*annStats.txt"), emit: stats, optional: true
-    path  "versions.yml"                       , emit: versions
+    path  "versions.yml"                  , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -31,7 +31,6 @@ process HOMER_ANNOTATEPEAKS {
         $args \\
         -gtf $gtf \\
         -cpu $task.cpus \\
-        -go gene_ontology.txt \\
         > ${caller}_${prefix}_annotatePeaks.txt
     
     mv annStats.txt ${caller}_${prefix}_annStats.txt

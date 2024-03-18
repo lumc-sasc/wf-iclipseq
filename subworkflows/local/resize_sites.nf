@@ -2,9 +2,8 @@
 
 include { BEDTOOLS_SLOP               } from '../../modules/nf-core/bedtools/slop/main.nf'
 include { BEDTOOLS_GETFASTA           } from '../../modules/nf-core/bedtools/getfasta/main.nf'
-include { STREME                      } from '../../modules/local/streme.nf'
 
-workflow MOTIF_ANALYSIS {
+workflow RESIZE_SITES {
     take:
     peaksites_bed           // channel: [ val(meta), [ bed ] ]
     chrom_sizes             // channel: [ sizes ]
@@ -27,12 +26,8 @@ workflow MOTIF_ANALYSIS {
     )
     ch_versions = ch_versions.mix(BEDTOOLS_GETFASTA.out.versions)
 
-   // perform motif analysis using STREME, generates a .html report (and optionally .tsv, .txt, .xml files)
-    STREME (
-        BEDTOOLS_GETFASTA.out.peak_fasta
-    )
-
     emit:
+    resized_bed                = BEDTOOLS_SLOP.out.bed                // channel: [ val(meta), [ bed ] ]
     peak_fasta                 = BEDTOOLS_GETFASTA.out.peak_fasta     // channel: [ val(meta), [ fasta ] ]
     versions                   = ch_versions                          // channel: [ versions.yml ]
 }

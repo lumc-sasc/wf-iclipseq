@@ -7,7 +7,7 @@ process BEDTOOLS_GETFASTA {
 
     input:
     tuple val(meta), path(bed) // adjusted by me
-    path fasta
+    path fasta // genome.fasta
 
     output:
     tuple val(meta), path("*.fa"), emit: peak_fasta // adjusted by me

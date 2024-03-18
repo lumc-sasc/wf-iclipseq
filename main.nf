@@ -55,7 +55,7 @@ save_extract_crosslink_intermeds (BEDTools) : $params.save_extract_crosslink_int
 NOTE: In its current state the pipeline may NOT work entirely if some processes are not run. Still needs to be tested.
 """
 
-// modules adapted from nf-core and already existing pipelines (rnaseq, etc)
+// modules adapted from nf-core and already existing pipelines (rnaseq, clipseq etc)
 // modules from existing pipelines are loose in subworkflows/nf-core 
 include { INPUT_CHECK                           } from './subworkflows/local/input_check.nf'
 include { FASTQC as FASTQC_AFTER_SORTMERNA      } from './modules/nf-core/fastqc/main.nf'
@@ -70,12 +70,15 @@ include { SORTMERNA                             } from './modules/local/sortmern
 include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_PURECLIP          } from './modules/local/homer/annotatepeaks/main.nf'
 include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_MACS2              } from './modules/local/homer/annotatepeaks/main.nf'
 include { MACS2_CALLPEAK                        } from './modules/nf-core/macs2/callpeak/main.nf'
-
+include { LINUX_COMMAND as UNIQUE_PEAK_NAME     } from './modules/goodwright/linux/command/main.nf'
 
 // local modules
 include { PURECLIP                              } from './modules/local/pureclip.nf'
 include { MULTIQC                               } from './modules/local/multiqc/main.nf'
 include { RIBODETECTOR                          } from './modules/local/ribodetector.nf' // not used at the moment
+include { BEDTOOLS_INTERSECT as BEDTOOLS_INTERSECT_PURECLIP } from './modules/local/bedtools_intersect.nf' // adapted from nf-core
+include { BEDTOOLS_INTERSECT as BEDTOOLS_INTERSECT_MACS2 } from './modules/local/bedtools_intersect.nf' // adapted from nf-core
+include { STREME                                } from './modules/local/streme.nf'
 
 // nf-core subworkflows only
 include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME        } from './subworkflows/nf-core/bam_dedup_stats_samtools_umitools/main.nf'
@@ -83,7 +86,7 @@ include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS
 // local subworkflows
 include { REMOVE_CHARACTERS                     } from './subworkflows/local/remove_characters.nf'
 include { EXTRACT_CROSSLINKS                    } from './subworkflows/local/extract_crosslinks.nf'
-include { MOTIF_ANALYSIS                         } from './subworkflows/local/motif_analysis.nf'
+include { RESIZE_SITES                          } from './subworkflows/local/resize_sites.nf'
 
 // neg and pos separately
 include { UCSC_BEDGRAPHTOBIGWIG as BEDGRAPHTOBIGWIG_RAW_POS }   from './modules/local/ucsc/bedgraphtobigwig/main.nf'
@@ -136,7 +139,6 @@ workflow {
             .set { ch_reads }
             ch_versions = ch_versions.mix(REMOVE_CHARACTERS.out.versions)
       }
-
 
       // SUBWORKFLOW FASTQC + UMITOOLS + TRIMGALORE (CUTADAPT)
       // does fastqc + trimgalore (cutadapt) + umitools to remove adapters, barcodes, low quality 3' ends
@@ -381,10 +383,48 @@ workflow {
             ch_versions       = ch_versions.mix(MACS2_CALLPEAK.out.versions.first())
       }
 
-      // DOES BEDTOOLS SLOP COME BEFORE OR AFTER HOMER ANNOTATION?
+      // resize binding sites for motif analysis and POSSIBLY gene annotation
+      RESIZE_SITES (
+            pureclip_crosslink_sites,
+            ch_chrom_sizes,
+            ch_fasta
+      )
 
+      // if true, uses resized PureCLIP binding sites for gene annotation
+      if (params.resized_for_annotation) {
+            pureclip_crosslink_sites = RESIZE_SITES.out.resized_bed
+      }
+
+
+      // bedtools intersection of bed file with gtf
+      if (!params.skip_bedtools_annotation) {
+            if (!params.skip_pureclip) {
+                  // replace column 4 with unique peak names (macs2 already has these IDs)
+                  UNIQUE_PEAK_NAME (
+                        pureclip_crosslink_sites, [], false
+                  )
+                  pureclip_crosslink_sites = UNIQUE_PEAK_NAME.out.file
+
+                  BEDTOOLS_INTERSECT_PURECLIP (
+                        'pureclip',
+                        pureclip_crosslink_sites,
+                        PREPARE_GENOME.out.gtf.map { [ [:], it ] }
+                  )
+                  ch_versions       = ch_versions.mix(BEDTOOLS_INTERSECT_PURECLIP.out.versions.first())
+            }
+
+            if (!params.skip_macs2) {
+                  BEDTOOLS_INTERSECT_MACS2 (
+                        'macs2',
+                        ch_macs2_peaks,
+                        PREPARE_GENOME.out.gtf.map { [ [:], it ] }
+                  )
+                  ch_versions       = ch_versions.mix(BEDTOOLS_INTERSECT_MACS2.out.versions.first())
+            }
+      }
+
+      // homer annotatepeaks, gives error currently
       if (!params.skip_homer_annotation) {
-      // homer annotatepeaks
             if (!params.skip_pureclip){
                   HOMER_ANNOTATEPEAKS_PURECLIP (
                         'pureclip',
@@ -406,13 +446,10 @@ workflow {
             }
       }
 
-      // TODO: further analysis
-
-      // motif analysis using STREME
-      MOTIF_ANALYSIS (
-            pureclip_crosslink_sites,
-            ch_chrom_sizes,
-            ch_fasta
+      // perform motif analysis using STREME, generates a .html report (and optionally .tsv, .txt, .xml files)
+      // uses pureclip results as pureclip is designed for iCLIP datasets specifically
+      STREME (
+        RESIZE_SITES.out.peak_fasta
       )
 
       // MODULE MULTIQC
