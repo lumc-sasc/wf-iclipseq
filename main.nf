@@ -26,7 +26,6 @@ SKIP BARCODE EXTRACTION                   : $params.skip_umi_extract
 WITH UMI DETECTION                        : $params.with_umi
 READ TO DISCARD AFTER BARCODE EXTR.       : $params.umi_discard_read
 MIN # TRIMMED READS SAMPLE REMOVAL        : $params.min_trimmed_reads
-SKIP PRE-MAPPING                          : $params.skip_premapping
 DO SORTMERNA                              : $params.remove_ribo_rna
 SKIP RIBODETECTOR                         : $params.skip_ribodetector
 SKIP FASTQC AFTER rRNA FILTERING          : $params.skip_fastqc_after_ribo_removal
@@ -167,34 +166,10 @@ workflow {
       ch_versions            = ch_versions.mix(FASTQ_FASTQC_UMITOOLS_TRIMGALORE.out.versions)
 
 
-      // BOWTIE2 MODULES 
-      // premapping
-      ch_multiqc_bowtie2            = Channel.empty()
-      ch_filtered_reads             = ch_trimmed_reads          // if premapping is skipped
-      if (!params.skip_premapping) {
-            ch_premap_fasta         = Channel.of(params.bw_fasta)
-
-            // build index
-            BOWTIE2_BUILD ( ch_premap_fasta.map { [ [:], it ] } )
-            ch_version              = ch_versions.mix(BOWTIE2_BUILD.out.versions)
-
-            // aligning
-            BOWTIE2_ALIGN (
-                  ch_trimmed_reads,
-                  BOWTIE2_BUILD.out.index,
-                  true, // save_unaligned
-                  true // sort_bam
-            )
-            
-            ch_filtered_reads       = BOWTIE2_ALIGN.out.fastq
-            ch_multiqc_bowtie2      = BOWTIE2_ALIGN.out.log
-            ch_aligned_bowtie2      = BOWTIE2_ALIGN.out.aligned
-            ch_version              = ch_versions.mix(BOWTIE2_ALIGN.out.versions)
-      }
-
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
       ch_sortmerna_multiqc          = Channel.empty()
+      ch_filtered_reads             = ch_trimmed_reads          // if rna filtering
 
       if (params.remove_ribo_rna) {
             // check for rRNA databases for sortmerna
@@ -203,24 +178,23 @@ workflow {
             // put databases in a channel
             ch_sortmerna_fastas = Channel.from(ch_ribo_db.readLines()).map { row -> file(row, checkIfExists: true) }.collect()
 
-            SORTMERNA ( ch_filtered_reads, ch_sortmerna_fastas ) // run sortmerna
+            SORTMERNA ( ch_trimmed_reads, ch_sortmerna_fastas ) // run sortmerna
             .reads // get emit: reads
             .set {ch_filtered_reads} // rename read data (after rRNA filtering)
             
             ch_sortmerna_multiqc    = SORTMERNA.out.log
             ch_versions             = ch_versions.mix(SORTMERNA.out.versions.first())
-      }
 
+            // MODULE FASTQC
+            // do quality control on data after rRNA removal
+            ch_fastqc_filtered_multiqc = Channel.empty()
 
-      // MODULE FASTQC
-      // do quality control on data after rRNA removal
-      ch_fastqc_filtered_multiqc = Channel.empty()
+            if (!params.skip_fastqc_after_ribo_removal) {
+                  FASTQC_AFTER_SORTMERNA ( ch_filtered_reads )
 
-      if (!params.skip_fastqc_after_ribo_removal) {
-            FASTQC_AFTER_SORTMERNA ( ch_filtered_reads )
-
-            ch_fastqc_filtered_multiqc    = FASTQC_AFTER_SORTMERNA.out.zip
-            ch_versions                   = ch_versions.mix(FASTQC_AFTER_SORTMERNA.out.versions.first())
+                  ch_fastqc_filtered_multiqc    = FASTQC_AFTER_SORTMERNA.out.zip
+                  ch_versions                   = ch_versions.mix(FASTQC_AFTER_SORTMERNA.out.versions.first())
+            }
       }
 
 
@@ -301,7 +275,7 @@ workflow {
                   // deduplicate genome BAM file before downstream analysis
                   BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME ( // TODO: does samtools manipulate the data?
                         ch_genome_bam.join(ch_genome_bam_index, by: [0]), // joining by which element?
-                        params.umitools_dedup_stats // still cannot see these in the multiqc
+                        params.umitools_dedup_stats
                   )
                   ch_genome_bam        = BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME.out.bam
                   ch_genome_bam_index  = BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME.out.bai
@@ -489,10 +463,6 @@ workflow {
                   
                   // analyse unmapped
                   ch_unmapped_multiqc.collect{it[1]}.ifEmpty([]),
-
-                  // premapping
-                  ch_multiqc_bowtie2.collect{it[1]}.ifEmpty([])
-
 
             ) // run multiqc
       }

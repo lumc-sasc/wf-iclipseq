@@ -14,7 +14,6 @@ export_plots: true
 # Run only these modules
 run_modules:
   - fastqc
-  - bowtie2
   - star
   - sortmerna
   - cutadapt
@@ -37,15 +36,6 @@ module_order:
         - 'fastqc/trim/*.zip'
 
   - cutadapt
-
-  - bowtie2:
-      contents: "reads; of these:"
-      exclude_contents:
-        - bisulfite
-        - HiC-Pro
-      shared: true
-      path_filters:
-        - 'bowtie2/align/*.log'
 
   - sortmerna
 
@@ -114,9 +104,6 @@ sp:
   star/genecounts:
     fn: "*ReadsPerGene.out.tab"
 
-  bowtie:
-    fn: "*.log"
-  
 
 show_analysis_time: True
 show_analysis_paths: True
