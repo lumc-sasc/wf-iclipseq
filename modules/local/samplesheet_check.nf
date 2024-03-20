@@ -1,3 +1,4 @@
+// adapted from nf-core/rnaseq
 process SAMPLESHEET_CHECK {
     tag "$samplesheet"
     queue 'short'

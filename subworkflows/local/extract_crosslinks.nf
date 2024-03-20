@@ -1,4 +1,3 @@
-
 // workflow proposed as in Busch et al 2020
 // uses modules from nf-core and clipseq 
 // partially adapted from clipseq

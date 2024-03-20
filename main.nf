@@ -167,7 +167,7 @@ workflow {
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
       ch_sortmerna_multiqc          = Channel.empty()
-      ch_filtered_reads             = ch_trimmed_reads          // if rna filtering
+      ch_filtered_reads             = ch_trimmed_reads          // if rna filtering is skipped
 
       if (params.remove_ribo_rna) {
             // check for rRNA databases for sortmerna
@@ -458,7 +458,7 @@ workflow {
                   ch_fastqc_dedup_multiqc.collect{it[1]}.ifEmpty([]),
                   
                   // analyse unmapped
-                  ch_unmapped_multiqc.collect{it[1]}.ifEmpty([]),
+                  ch_unmapped_multiqc.collect{it[1]}.ifEmpty([])
 
             ) // run multiqc
       }

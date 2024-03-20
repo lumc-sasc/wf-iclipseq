@@ -1,5 +1,5 @@
 // Check input samplesheet and get read channels
-//
+// partially adapted from nf-core/rnaseq
 
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 
@@ -49,21 +49,6 @@ def create_fastq_channel(LinkedHashMap row) {
             meta.control_bai = file(row.control_bai)
         } 
     }
-        // fastq_meta[1].add(file(row.control_bam))
-        // fastq_meta.merge(file(row.control_bam))
-        // meta.control = 1
-
-        // if (file(row.control_bai).exists()) {
-        //     if (!file(row.control_bam).exists()) {
-        //         exit 1, "ERROR: Could only find a .bai file. Make sure to add the bam file as well."    
-        //     } else {
-        //         meta.control_bai = file(row.control_bai)
-        //         // fastq_meta[1].add(file(row.control_bai))\
-        //         // fastq_meta.merge(file(row.control_bam))
-        //         // meta.control = 2
-        //     }
-        // }
-    //}
 
     return fastq_meta
 }

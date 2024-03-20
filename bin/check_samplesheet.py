@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# adjusted from nf-core/rnaseq
+# adapted from nf-core/rnaseq
 
 import os
 import sys
