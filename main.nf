@@ -270,7 +270,7 @@ workflow {
             if (params.with_umi) {
                   // deduplicate genome BAM file before downstream analysis
                   BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME (
-                        ch_genome_bam.join(ch_genome_bam_index, by: [0]), // joining by which element?
+                        ch_genome_bam.join(ch_genome_bam_index, by: [0]),
                         params.umitools_dedup_stats
                   )
                   ch_genome_bam        = BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME.out.bam
