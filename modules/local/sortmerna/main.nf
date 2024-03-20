@@ -1,3 +1,4 @@
+// adapted from nf-core/rnaseq
 process SORTMERNA {
     tag "$meta.id"
 

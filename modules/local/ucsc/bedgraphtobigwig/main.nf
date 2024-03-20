@@ -1,3 +1,4 @@
+// adapted from nf-core
 process UCSC_BEDGRAPHTOBIGWIG {
     tag "$meta.id"
 
@@ -20,7 +21,7 @@ process UCSC_BEDGRAPHTOBIGWIG {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def suffix = task.ext.suffix ?: '' // added by me
+    def suffix = task.ext.suffix ?: ''
     def VERSION = '445' // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
     """
     bedGraphToBigWig \\
@@ -36,7 +37,7 @@ process UCSC_BEDGRAPHTOBIGWIG {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def suffix = task.ext.suffix ?: '' // added by me
+    def suffix = task.ext.suffix ?: ''
     def VERSION = '445' // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
     """
     touch ${prefix}.${suffix}.bigWig

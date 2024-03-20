@@ -1,3 +1,4 @@
+// adapted from nf-core
 process HOMER_ANNOTATEPEAKS {
     tag "$meta.id"
 

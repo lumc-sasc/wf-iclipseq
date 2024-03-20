@@ -62,8 +62,6 @@ include { FASTQC as FASTQC_AFTER_DEDUP          } from './modules/nf-core/fastqc
 include { FASTQ_FASTQC_UMITOOLS_TRIMGALORE      } from './subworkflows/nf-core/fastq_fastqc_umitools_trimgalore/main.nf'
 include { FASTQC as FASTQC_UNMAPPED             } from './modules/nf-core/fastqc/main.nf'
 include { PREPARE_GENOME                        } from './subworkflows/local/prepare_genome.nf'
-include { BOWTIE2_BUILD                         } from './modules/nf-core/bowtie2/build/main.nf'
-include { BOWTIE2_ALIGN                         } from './modules/nf-core/bowtie2/align/main.nf'
 include { ALIGN_STAR                            } from './subworkflows/local/align_star.nf'
 include { SORTMERNA                             } from './modules/local/sortmerna/main.nf'
 include { HOMER_ANNOTATEPEAKS as HOMER_ANNOTATEPEAKS_PURECLIP          } from './modules/local/homer/annotatepeaks/main.nf'
@@ -227,8 +225,6 @@ workflow {
       ch_star_multiqc               = Channel.empty()
       ch_star_log_multiqc           = Channel.empty()
       ch_star_gene_multiqc          = Channel.empty()
-      ch_aligner_pca_multiqc        = Channel.empty() // not used rn
-      ch_aligner_clustering_multiqc = Channel.empty() // not used rn
       ch_unmapped                   = Channel.empty()
       ch_unmapped_multiqc           = Channel.empty()
 
@@ -273,7 +269,7 @@ workflow {
             // deduplication using UMI-Tools (include mapped to multiple loci!)
             if (params.with_umi) {
                   // deduplicate genome BAM file before downstream analysis
-                  BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME ( // TODO: does samtools manipulate the data?
+                  BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME (
                         ch_genome_bam.join(ch_genome_bam_index, by: [0]), // joining by which element?
                         params.umitools_dedup_stats
                   )
@@ -397,7 +393,7 @@ workflow {
             }
       }
 
-      // homer annotatepeaks, gives error currently
+      // homer annotatepeaks
       if (!params.skip_homer_annotation) {
             if (!params.skip_pureclip){
                   HOMER_ANNOTATEPEAKS_PURECLIP (
