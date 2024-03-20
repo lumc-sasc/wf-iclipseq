@@ -69,6 +69,7 @@ Those in **bold** are mandatory to run the pipeline.
 - control_bai: .bai file of input/control data (used for peak calling with PureCLIP)
 
 If control_bam is provided, it is imperative that control_bai is provided as well!
+**Note: This pipeline has been tested for single-end reads, and may not support paired-end reads (remains to be tested).**
 
 By default, the reference genome and annotation are specified in the `conf/params.config`. You can use these and move on to running the pipeline or you can replace these with your own.
 ```
