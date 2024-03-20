@@ -1,0 +1,629 @@
+---
+title: "BEDTOOLS_INTERSECT_ANNOTATION_ANALYSIS"
+author: "Amarise Silié"
+date: "2024-03-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load libraries
+
+```{r message=FALSE}
+library(data.table)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(magrittr)
+library(stringi)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(scales)
+library(ggrepel)
+
+library(RColorBrewer) # for generation of palettes
+library(randomcoloR) # for generation of palettes
+```
+
+# Load data
+
+Loading the peak annotation files., which were created by intersecting the peak bed files with the GTF file from Ensembl. I load each file separately (which is less convenient if you have many files, but in my case is doable). Make sure to set your work directory correctly to save the upcoming figures in the right folders. You can also specify the general path of your annotation data and the folder where you want to save your graphs below:
+
+```{r}
+# general_path = "/exports/sascstudent/amhsilie/wf-iclipseq/all_iclip/results_nocontrol/results/downstream_analysis/bedtools_annotations/" # <- do not forget the last /
+save_path = "/exports/sascstudent/amhsilie/iclip_downstream/final_annotation/gtf/nocontrol_genesonly/"
+
+general_path = '/exports/sascstudent/amhsilie/iclip_downstream/gtfs/genes/'
+
+# this is how we will save our plots later:
+paste(save_path, 'name', sep='')
+```
+
+If you want to save a plot in a directory does not exist yet, **Rstudio will ask you whether you want to it to create the directory for you *in the console!***
+
+```{r}
+# macs_gof_3 = read.delim(paste(general_path, "macs2_gof_3_T1_annotations.bed", sep=''))
+# macs_gof_4 = read.delim(paste(general_path, "macs2_gof_4_T1_annotations.bed", sep=''))
+# macs_gof_5 = read.delim(paste(general_path, "macs2_gof_5_T1_annotations.bed", sep=''))
+# macs_wt_3 = read.delim(paste(general_path, "macs2_wt_3_T1_annotations.bed", sep=''))
+# macs_wt_4 = read.delim(paste(general_path, "macs2_wt_4_T1_annotations.bed", sep=''))
+# macs_wt_5 = read.delim(paste(general_path, "macs2_wt_5_T1_annotations.bed", sep=''))
+
+# pureclip_gof_3 = read.delim(paste(general_path, "pureclip_gof_3_T1_annotations.bed", sep=''))
+# pureclip_gof_4 = read.delim(paste(general_path, "pureclip_gof_4_T1_annotations.bed", sep=''))
+# pureclip_gof_5 = read.delim(paste(general_path, "pureclip_gof_5_T1_annotations.bed", sep=''))
+# pureclip_wt_3 = read.delim(paste(general_path, "pureclip_wt_3_T1_annotations.bed", sep=''))
+# pureclip_wt_4 = read.delim(paste(general_path, "pureclip_wt_4_T1_annotations.bed", sep=''))
+# pureclip_wt_5 = read.delim(paste(general_path, "pureclip_wt_5_T1_annotations.bed", sep=''))
+
+pureclip_gof_3 = read.delim(paste(general_path, "gof_3_peaks_in_genes_ann.bed", sep=''))
+pureclip_gof_4 = read.delim(paste(general_path, "gof_4_peaks_in_genes_ann.bed", sep=''))
+pureclip_gof_5 = read.delim(paste(general_path, "gof_5_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_3 = read.delim(paste(general_path, "wt_3_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_4 = read.delim(paste(general_path, "wt_4_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_5 = read.delim(paste(general_path, "wt_5_peaks_in_genes_ann.bed", sep=''))
+
+# all tables to be combined later
+dfs = list( #macs_gof_3, macs_gof_4, macs_gof_5, macs_wt_3, macs_wt_4, macs_wt_5, 
+           pureclip_gof_3 , pureclip_gof_4, pureclip_gof_5, pureclip_wt_3, pureclip_wt_4, 
+           pureclip_wt_5
+           )
+names <- c( # "macs_gof_3", "macs_gof_4", "macs_gof_5", "macs_wt_3", "macs_wt_4", "macs_wt_5",
+           "pureclip_gof_3" ,"pureclip_gof_4", "pureclip_gof_5", "pureclip_wt_3", "pureclip_wt_4", 
+           "pureclip_wt_5"
+           )
+```
+
+# Preparing the dataframe
+
+```{r}
+# joining all tables in a single dataframe
+count = 1
+df_combined = data.frame()
+
+for (df in dfs){
+  # add sample name
+  df <- mutate(df, sample = names[count]) %>% relocate(sample)
+  # defining column names
+  colnames(df) <- c("sample", "bed_chr", "pos_bed", "pos2_bed", "peak_id",
+                           "peak_score","bed_strand", "gtf_chr", "source", "feature", 
+                           "start", "end", "gtf_score", "gtf_strand", "frame", "attribute")
+  count <- count + 1
+  # combine all the dataframes
+  df_combined <- bind_rows(df_combined, df)
+}
+
+# assign non-intersected regions as intergenic
+df_combined <- within(df_combined, feature[start == -1 & end == -1] <- 'intergenic')
+
+# keep hits where peak bed strand matches the gtf intersect hit OR its feature is intergenic
+df_combined <- filter(df_combined, bed_strand == gtf_strand | feature == 'intergenic')
+```
+
+## Adding columns
+
+The attribute column from the gtf contains multiple features. We will be splitting up these features in multiple columns. **This code can run for a long time and might even crash. Make sure to save the dataframe in a .csv or .tsv after so you can import it at later time points instead of running the code again.**
+
+**Note:** an instance in the attribute column can contain multiple tags. The code below only extracts the last tag. For the rest of this markdown, the tag is not used and even removed, so this problem is not addressed. If it is relevant to your research, make sure to think of a workaround.
+
+```{r}
+# get all variable names in the attribute column using regex
+variable_names <- regmatches(df_combined$attribute,
+                             gregexpr('(\\b(\\w+|)(?=\\s[\\w])+\\b)(?![^()]*\\))', 
+                                      df_combined$attribute, perl = TRUE)
+                             ) %>% 
+  unlist() %>% 
+  unique() %>% # get unique values (list again) 
+  stri_remove_empty() # remove empty strings
+
+# chose the variables you don't need. keeping more variables=higher runtime!
+variable_names <- variable_names[!variable_names %in% c('gene_version', 'transcript_version','ccds_id', 'exon_id','protein_version', 'protein_id', 'exon_number', 'exon_version', 'tag')]
+```
+
+```{r}
+# make column called feature_name
+# if feature_name is in the attribute -> then replace attribute value by regex
+# else -> replace attribute value by NA
+
+# make a function to extract features using regex
+extract_feature <- function(dataframe, feature_name) {
+  dataframe %>%
+    mutate(!!sym(feature_name) := ifelse(grepl(feature_name, attribute), 
+        # if TRUE, replace entire value by regex
+        str_replace(string=attribute, pattern='.*', 
+                    replacement=stri_extract_first_regex(
+                      attribute, paste0('(?<=.{0,100}\\b',
+                                        feature_name,'\\b\\s{0,100})[\\w\\d-]+[)]*')
+                    )), # if this does not work, remove teh second {0,100}
+        # if FALSE, replace by NA
+        NA)
+           )
+}
+
+# loop over the list of feature names and extract each feature from the attributes column
+for (feature in variable_names) {
+  df_combined <- extract_feature(df_combined, feature)
+  print(paste0("done adding ",feature))
+}
+
+# saving the table just in case
+file_path <- paste(save_path, 'save_annotations.csv', sep='')
+write_csv(df_combined, file_path)
+```
+
+# Raw statistics
+
+Including total peak counts (boxplots), feature distribution (exons, CDS, gene, transcript, non-defined).
+
+```{r}
+# import annotated table
+df_combined = read.csv(paste(save_path, "save_annotations.csv", sep=''))
+
+# make a copy of df_combined just in case
+df_copy = copy(df_combined)
+```
+
+## Total peak count (Boxplot)
+
+```{r fig.height=4, fig.width=8}
+# peak counts df
+peak_counts <- df_combined %>%
+  group_by(sample) %>%
+  summarise(count = n_distinct(peak_id))
+peak_counts$condition <- c(rep("gof",3),rep("wt",3))
+
+# sometimes it's easier to just manually write down the hits from wc -l from the pureclip bed files
+peak_counts <- data.frame(
+  sample=c("gof_3" , "gof_4", "gof_5", "wt_3", "wt_4", "wt_5"),
+  count=c(3392, 3040, 2647, 1446, 3011, 2509),
+  condition=c(rep("gof",3),rep("wt",3))
+)
+
+ggplot(peak_counts, aes(x=as.factor(condition), y=count)) +
+    geom_boxplot(fill="slateblue", alpha=0.2) +
+    geom_text_repel(data=peak_counts,aes(label=sample), position = position_jitter(seed = 1)) +
+    geom_jitter(color="blue", size=1, alpha=0.9,
+                position = position_jitter(seed = 1)) +
+  
+    # coord_cartesian(ylim = c(0, 3500)) + # define range
+    xlab("condition") +
+    ylab("peak count")
+
+  # save figure
+ggsave(paste(save_path, "boxplots/pureclip_raw_peak_count.png", sep=''))
+```
+
+## Feature distribution (Piechart)
+
+Distribution of features that intersected with the peak bed file. I used a different method to get these results.
+
+```{r echo=FALSE, fig.align="center", fig.width=10, message=FALSE, warning=FALSE}
+p <- '/exports/sascstudent/amhsilie/iclip_downstream/gtfs/'
+
+gof_3 = read.delim(paste(p, "gof_3_merged.bed", sep=''))
+gof_4 = read.delim(paste(p, "gof_4_merged.bed", sep=''))
+gof_5 = read.delim(paste(p, "gof_5_merged.bed", sep=''))
+wt_3 = read.delim(paste(p, "wt_3_merged.bed", sep=''))
+wt_4 = read.delim(paste(p, "wt_4_merged.bed", sep=''))
+wt_5 = read.delim(paste(p, "wt_5_merged.bed", sep=''))
+
+# all tables to be combined later
+dfs = list(gof_3 , gof_4, gof_5, wt_3, wt_4, wt_5)
+names <- c( "pureclip_gof_3" ,"pureclip_gof_4", "pureclip_gof_5", "pureclip_wt_3", "pureclip_wt_4", "pureclip_wt_5")
+
+count = 1
+df_features = data.frame()
+
+for (df in dfs){
+  # add sample name
+  df <- mutate(df, sample = names[count]) %>% relocate(sample)
+  # defining column names
+  colnames(df) <- c("sample", "bed_chr", "pos_bed", "pos2_bed", "peak_id","peak_score", "strand","feature")
+  count <- count + 1
+  # combine all the dataframes
+  df_features <- bind_rows(df_features, df)
+}
+
+df_features %>% 
+  group_by(sample) %>% 
+  count(feature, sample) %>%
+  
+  
+  # plot
+  ggplot(aes(x = "", y = n, fill = feature)) +
+  geom_bar(stat = "identity", width = 1, color = "white", position = position_fill()) +
+  geom_text(aes(label = n), position = position_fill(vjust = 0.5)) +
+  coord_polar(theta = "y", start = 0) +
+  facet_wrap(~ sample) +
+  ggtitle('Features of PureCLIP peaks') +
+  # remove background, grid, numeric labels
+  theme_void()
+
+  # save figure
+ggsave(paste(save_path, "basic_annotation_piechart/pureclip.png", sep=''), bg = 'white')
+```
+
+## Separate genes
+
+We will look at genes.
+
+```{r}
+genes <- df_combined[df_combined$feature == 'gene',]
+# saving the table
+file_path <- paste(save_path, 'genes_annotations.csv', sep='')
+write_csv(genes, file_path)
+
+# saving the transcripts as well, in case of further analysis
+transcripts <- df_combined[df_combined$feature == 'transcript',]
+file_path <- paste(save_path, 'transcript_annotations.csv', sep='')
+write_csv(transcripts, file_path)
+```
+
+# Genes
+
+## Color assignment
+
+```{r}
+myColor <- c("#C2EABD", "#ECD194", "#B5E8E3", "#55E698", "#F24C3D", "#DB6A6B", "#E4AFD0", "#B4BFE5", "#A2AA67", "#8D9498" ,"#63E452","#63CDE1", "#E1478F", "#D034E8", "#DCB945", "#C2F040", "#619872" ,"#7936E7", "#D8A397", "#E5DBE6", "#E641C5", "#E78EDD", "#6D7FDD", "#69E8D1", "#BE6DDD", "#E09454" ,"#E7E248", "#B29CDD", "#C4709B", "#6D57CF", "#6197D5", "#E3DFC6")
+types <- unique(genes$gene_biotype)
+types <- types[order(names(setNames(types, types)))]
+names(myColor) <- types
+```
+
+## Relationship between peak count and gene length (scatterplot)
+
+Theoretically, the longer the gene, the more peaks it contains. Here, we check if this hypothesis holds true for our data. We can do this visually, but also with a correlation test.
+
+```{r message=FALSE, warning=FALSE}
+# genes <- read_csv(paste(save_path, 'genes_annotations.csv', sep=''))
+genes$gene_length <- abs(genes$end - genes$start)
+
+# how many peaks are present in each gene?
+# peak_count (or crosslink count) per gene_id
+genes <-
+  genes |>
+  # we do the following per sample:
+  group_by(sample, gene_id, gtf_chr, .drop = FALSE) |> 
+  # count per gene (gene_id) how many peaks/crosslinks it has 
+  add_count(gene_id, name = 'peak_count')
+
+# amount of genes per sample
+genes[c("sample","gene_id")] %>% 
+  distinct() %>% 
+  group_by(sample) %>% 
+  count(sample)
+
+# each gene appears once in each graph
+genes[c("sample","gene_id","peak_count", "gene_length")] |>
+  # each gene_id appears only once per sample
+  distinct() |>
+  # pureclip
+  ggplot(aes(x = peak_count, y = gene_length)) +
+    geom_point(size = 0.1, shape = 1, col = "black") +
+    facet_wrap(~ sample) +
+    # coord_cartesian(xlim = c(0, 25)) + # define range
+    ggtitle(sprintf('Relationship between gene_length and peak_count in PureCLIP data'), )
+
+ggsave(paste(save_path, "histograms/pureclip_peak_genelength_histogram.png", sep=''))
+
+# correlation test
+genes[c("sample","gene_id","peak_count", "gene_length")] %>%
+  # each gene_id appears only once per sample
+  distinct() %>%
+  cor.test(x=.$peak_count, y=.$gene_length, method=c("pearson"), alternative="two.sided")
+
+
+```
+
+## Peaks in genes (Histograms, table)
+
+We will be taking a look at how many peaks are present in the genes. We also check how many genes are left if we assign peaks in a one-to-one manner (aka no overlaps allowed), instead of one-to-(possibly)-many.
+
+```{r fig.width=10, message=FALSE, warning=FALSE}
+binwidth = 1
+cutoff = 1 
+
+# how many genes have a certain peak count?
+genes[c("sample","gene_id","peak_count")] %>%
+  distinct() %>%
+  ggplot(aes(x = peak_count)) +
+    geom_histogram(stat = "bin", binwidth = binwidth, fill = "cornflowerblue", col = "black") + 
+    facet_wrap(~ sample) +
+    ggtitle('Amount of PureCLIP peaks in genes') +
+  xlab("Number of peaks") +
+  ylab("Number of genes")
+
+ggsave(paste(save_path, "histograms/pureclip_peak_count_distribution.png", sep=''))
+
+# which peaks overlap in multiple genes?
+genes <- genes %>%
+  group_by(sample) %>%
+  # count per peak_ID how many times it overlaps with a gene
+  add_count(peak_id, name = 'peak_overlap_times')
+
+# how many peaks overlap multiple genes?
+overlap <- genes[c("sample","gene_id","peak_id", 'peak_overlap_times')] %>%
+  distinct() %>%
+  group_by(sample) %>%
+  # all individual peaks
+  mutate(all_peaks = n_distinct(peak_id)) %>%
+  .[c("sample","all_peaks")] %>%
+  distinct()
+
+overlap$non_overlapping_peaks <- genes[c("sample","peak_id", 'peak_overlap_times')]  %>%
+    distinct() %>%
+    group_by(sample) %>%
+    # peaks that appear once
+    filter(peak_overlap_times == 1) %>%
+    mutate(non_overlapping_peaks = n_distinct(peak_id)) %>% 
+    .[c("non_overlapping_peaks")] %>%
+    distinct() %>%
+  # turn tibble into vector
+    pull(non_overlapping_peaks)
+
+# peaks that appear once
+overlap$overlapping_peaks = abs(overlap$all_peaks - overlap$non_overlapping_peaks)
+# peaks that appear more than once
+overlap$percentage_overlapping_peaks = overlap$overlapping_peaks / overlap$all_peaks * 100
+
+overlap
+```
+
+### Allowing overlaps or not
+
+Resolving binding site overlap can be done in multiple ways. One of them is simply removing the peaks that overlap.
+
+```{r}
+# remove all peaks that overlap with more than one gene
+genes_prefiltering <- copy(genes)
+genes <- genes %>% 
+  filter(peak_overlap_times == 1)
+```
+
+## Biotypes of peaks (Horizontal barplots)
+
+After deciding whether we want to allow overlaps or not, we can make a barplot showing the distribution of the peak biotypes.
+
+```{r echo=FALSE, fig.align="center", fig.width=15, message=FALSE, warning=FALSE}
+
+# per sample, total gene_biotype count
+genes %>%
+  group_by(sample) %>%
+  count(gene_biotype, sample) %>%
+  # change order of gene type appearances in barplot
+  mutate(gene_biotype = fct_reorder2(gene_biotype, sample, n))  %>%
+
+  # fraction plot
+  ggplot(aes(x = sample, y = n)) +
+    geom_bar(aes(fill = gene_biotype), width = 0.7,
+             position="fill", stat="identity",
+             colour="black") +
+    theme(text = element_text(size=12)) + # change font size
+    scale_fill_manual(values = myColor) + # change colors
+    coord_flip() + # horizontal graph
+    scale_y_continuous(labels = percent_format(accuracy = 1),
+                       breaks = breaks_pretty(10)) + # percentages
+    ggtitle("Biotypes of peaks in fractions") +
+    ylab("Fraction")
+
+  # save figure
+ggsave(paste(save_path, "gene_types_barplots/pureclip_peaks_fraction.png", sep=''))
+```
+
+## Biotypes of genes (Horizontal barplots)
+
+```{r echo=FALSE, fig.align="center", fig.width=15, message=FALSE, warning=FALSE}
+genes[c("sample","gene_biotype","gene_id")] %>%
+  distinct() %>%
+  group_by(sample) %>%
+  count(gene_biotype, sample) %>%
+  # change order of gene type appearances in barplot
+  mutate(gene_biotype = fct_reorder2(gene_biotype, sample, n))  %>%
+
+  # fraction plot
+  ggplot(aes(x = sample, y = n)) +
+    geom_bar(aes(fill = gene_biotype), width = 0.7,
+             position="fill", stat="identity",
+             colour="black") +
+    theme(text = element_text(size=12)) + # change font size
+    scale_fill_manual(values = myColor) + # change colors
+    coord_flip() + # horizontal graph
+    scale_y_continuous(labels = percent_format(accuracy = 1),
+                       breaks = breaks_pretty(10)) + # percentages
+    ggtitle("Biotypes of genes in fractions") +
+    ylab("Fraction")
+
+  # save figure
+ggsave(paste(save_path, "gene_types_barplots/pureclip_genes_fraction.png", sep=''))
+```
+
+## Gene lists
+
+If you want to do some GO pathway analysis, you can generate gene lists. If you have two different conditions, e.g. wild type vs. gain-of-function (as in my case), you can take the differences between these lists.
+
+If `write.table` throws an error, create the `genes` folder in the desired directory and run again.
+
+```{r}
+# creating a genes folder so write.table() does not throw an error
+dir.create(paste(save_path, 'genes', sep=''), showWarnings = FALSE)
+
+# gof genes
+gof_genes <- genes %>%
+  subset(grepl("pureclip_gof_*",sample)) %>%
+  {unique(.$gene_id)}
+  
+# wt_genes
+wt_genes <- genes %>%
+  subset(grepl("pureclip_wt_*",sample)) %>%
+  {unique(.$gene_id)}
+
+# collect genes unique to either gof or wt
+gof_only <- gof_genes[!(gof_genes %in% wt_genes)]
+wt_only <- wt_genes[!wt_genes %in% gof_genes]
+
+# save to .txt
+# if this fails, make the genes folder first
+write.table(gof_genes, file=paste(save_path, "genes/gof_gene_list.txt", sep=''), 
+            sep=",", row.names = FALSE, quote=FALSE)
+write.table(gof_only, file=paste(save_path, "genes/gof_only_gene_list.txt", sep=''), 
+            sep=",", row.names = FALSE, quote=FALSE)
+
+write.table(wt_genes, file=paste(save_path, "genes/wt_gene_list.txt", sep=''), 
+            sep=",", row.names = FALSE, quote=FALSE)
+write.table(wt_only, file=paste(save_path, "genes/wt_only_gene_list.txt", sep=''), 
+            sep=",", row.names = FALSE, quote=FALSE)
+```
+
+## Top genes
+
+We can generate a list of the top genes, based on peak score, normalized peak count or a combination of the two.
+
+```{r}
+# norm_peakcount_bylength: apply normalization by doing # peaks / length
+genes$norm_peakcount_bylength <- genes$peak_count / genes$gene_length
+
+# intensityxcount: peak.score x peak_count
+genes$scorexcount <- genes$peak_score * genes$peak_count
+
+# e.g. based on normalized peak count:
+genes %>% 
+  # you may need to add the distinct() function here for the genes with multiple peaks
+  group_by(sample) %>% 
+  slice_max(order_by = norm_peakcount_bylength, n = 100)
+```
+
+## Gene differences between samples (scatterplots)
+
+We can compare the genes based on e.g. normalized peak count by plotting gain-of-function against wild type samples in a scatterplot.
+
+```{r echo=TRUE, fig.width=12, message=FALSE, warning=FALSE, gif.align="center"}
+# average normalized peak count of gene_id is plotted
+# x-axis: WT avg peak intensity
+# y-axis GOF avg peak intensity
+cutoff = 0
+
+# create new df with norm peak counts per sample for each gene
+couples <- genes %>% 
+  # group by id and sample
+  group_by(gene_id, gene_name, sample) %>% 
+  # # calculate mean of peak count (basically acts as distinct() on the values) for each gene_id in each sample 
+  summarise(AvgPeakScore=(mean(peak_count))) %>% 
+  # transform tibble so gof 3 and wt 3 have their own columns
+  pivot_wider(names_from = sample, values_from = AvgPeakScore) 
+
+# make new column with Gene names: if gene_name is empty, replace with gene_id
+couples$id <- with(couples, ifelse(is.na(gene_name), gene_id, gene_name))
+# replace empty values by 0
+couples <- mutate(couples, across(where(is.numeric), replace_na, 0))
+
+# couple 3
+ggplot(couples, aes(x=log(pureclip_wt_3), y=log(pureclip_gof_3))) +
+  geom_point( alpha = 0.5, col = "black" ) +
+  # geom_point(aes(text=gene_id, gene_name), name='gene_id', size=0.5, shape=5)
+  geom_text_repel(
+    data = couples #%>% filter(pureclip_wt_3<mean(couples$pureclip_wt_3) | pureclip_gof_3<mean(couples$pureclip_gof_3))
+    , # filter data first
+    aes(label=id), size = 3, vjust="inward",hjust="inward"
+    ) +
+  xlab("Normalized peak count by gene length in GoF 3") +
+  ylab("Normalized peak count by gene length in WT 3") +
+  ggtitle("Genes associated with one or more peaks in GoF 3 and WT 3 samples")
+
+ggsave(paste(save_path, sprintf("scatterplots/s3_cut_%s.png", cutoff), sep=''))
+
+# couple 4
+ggplot(couples, aes(x=log(pureclip_wt_4), y=log(pureclip_gof_4))) +
+  geom_point( alpha = 0.5, col = "black" ) +
+  geom_text_repel(
+    data = couples %>% filter(pureclip_wt_4>median(couples$pureclip_wt_4) | pureclip_gof_4>median(couples$pureclip_gof_4)), # filter data first
+    aes(label=id), size = 3, vjust="inward",hjust="inward"
+    ) +
+  xlab("Average normalized peak count in GoF 4") +
+  ylab("Average normalized peak count in WT 4") +
+  ggtitle("Genes associated with one or more peaks in GoF 4 and WT 4 samples")
+
+ggsave(paste(save_path, sprintf("scatterplots/s4_cut_%s.png", cutoff), sep=''))
+
+# couple 5
+ggplot(couples, aes(x=log(pureclip_wt_5), y=log(pureclip_gof_5))) +
+  geom_point( alpha = 0.5, col = "black" ) +
+  geom_text_repel(
+    data = couples #%>% filter(pureclip_wt_5<mean(couples$pureclip_wt_5) | pureclip_gof_5<mean(couples$pureclip_gof_5))
+    , # filter data first
+    aes(label=id), size = 3, vjust="inward",hjust="inward"
+    ) +
+  xlab("Normalized peak count by gene length in GoF 5") +
+  ylab("Normalized peak count by gene length in WT 5") +
+  ggtitle("Genes associated with one or more peaks in GoF 5 and WT 5 samples")
+
+ggsave(paste(save_path, sprintf("scatterplots/s5_cut_%s.png", cutoff), sep=''))
+```
+
+## Reproducibility (heatmaps)
+
+We can compare the samples based on e.g. normalized peak count by plotting them in heatmaps.
+
+If `plot.new()` throws an error, create the `heatmaps` folder in the desired directory and run again.
+
+```{r fig.height=20, fig.width=10, message=FALSE, warning=FALSE}
+# create heatmaps directory so plot.new() does not throw an error
+dir.create(paste(save_path, 'heatmaps', sep=''), showWarnings = FALSE)
+
+# make palette
+fc <- colorRampPalette(c("lightblue", "cornflowerblue", "darkblue"))
+
+# making a copy of the dataframe
+m_couples <- as.data.frame(couples)
+
+# entrez.id = rownames
+rownames(m_couples) <- m_couples$gene_id
+m_couples[,1] <- NULL
+
+# split df into wt and gof
+wt_coupled <- m_couples[,grepl("pureclip_wt_*", colnames(m_couples))]
+gof_coupled <- m_couples[,grepl("pureclip_gof_*", colnames(m_couples))]
+
+# # # remove rows with only 0s
+# wt_coupled <- wt_coupled[apply(wt_coupled[,-1], 1, function(x) !all(x==0)),]
+# gof_coupled <- gof_coupled[apply(gof_coupled[,-1], 1, function(x) !all(x==0)),]
+
+wt_coupled <- wt_coupled %>% 
+  # remove rows with at least one 0 in it
+  filter(if_all(pureclip_wt_3:pureclip_wt_5, ~ !.x  %in% 0)) %>%
+  # order desc by wt_3
+  
+  # convert to matrix
+  as.matrix()
+
+gof_coupled <- gof_coupled %>% 
+# remove rows with at least one 0 in it
+  filter(if_all(pureclip_gof_3:pureclip_gof_5, ~ !.x  %in% 0)) %>%
+  # order desc by gof_3
+  
+  # convert to matrix
+  as.matrix()
+
+# only genes that are present IN ALL 3 SAMPLES
+png(file=paste(save_path, "heatmaps/wt_heatmap.png", sep=''))
+heatmap(wt_coupled, 
+        Colv = NA, 
+        Rowv = NA, 
+        scale = c('column'), 
+        col = fc(20),
+      )
+# create the file
+dev.off()
+
+png(file=paste(save_path, "heatmaps/gof_heatmap.png", sep=''))
+heatmap(gof_coupled, 
+        Colv = NA, 
+        Rowv = NA, 
+        scale = c('column'), 
+        col = fc(20)
+        )
+# create the file
+dev.off()
+```

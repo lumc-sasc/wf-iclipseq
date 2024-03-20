@@ -1,5 +1,5 @@
 ---
-title: "annotation_analysis"
+title: "HOMER_ANALYSIS"
 author: "Amarise Silié"
 date: "2024-03-03"
 output: html_document
@@ -9,11 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Preface
+
+Starting off, this R markdown has a few gene annotation plots using...
+
+### Data, packages and versions
+
+For this R package to work with R, you need to install the following packages:
+
+E.g.:
+
+```{r}
+# BiocManager::install("ChIPseeker", force=TRUE) 
+# # you can specify your library if needed by adding: 
+# # lib = "/home/USER/R/x86_64-pc-linux-gnu-library/X.X"
+```
+
 # Load libraries
 
 Install as needed with `install.packages("namelib")`, where `namelib` is the name of the library.
-
-**Name versions!**
 
 ```{r include=FALSE}
 library(ggplot2) # for plotting
@@ -63,7 +77,7 @@ names <- c( # "macs_gof_3", "macs_gof_4", "macs_gof_5", "macs_wt_3", "macs_wt_4"
            "pureclip_gof_3", "pureclip_gof_4", "pureclip_gof_5", "pureclip_wt_3", "pureclip_wt_4", "pureclip_wt_5")
 ```
 
-# Preparing dataframe
+# Preparing the dataframe
 
 ```{r}
 # joining all tables in a single dataframe
@@ -136,6 +150,13 @@ df_combined <- df_combined %>%
   filter(!is.na(Entrez.ID))
 ```
 
+## Saving the table
+
+```{r}
+file_path <- paste(save_path, 'df_combined_nocontrol.tsv', sep='')
+write.table(df_combined, file=file_path, quote=FALSE, sep='\t')
+```
+
 # Basic Annotation (Piecharts)
 
 HOMER assigns annotations to each peak in the following priority order: TSS, TTS, Exon, Intron, Intergenic.
@@ -183,6 +204,26 @@ types <- unique(df_combined$Gene.Type)
 types <- types[order(names(setNames(types, types)))]
 names(myColor) <- types
 myColor
+```
+
+# Peak counts (Boxplots)
+
+```{r fig.height=4, fig.width=8}
+# peak counts per sample
+peak_counts <- data.frame(table(df_combined$sample))
+# condition
+peak_counts$condition <- c(rep("gof",3),rep("wt",3))
+
+ggplot(peak_counts, aes(x=as.factor(condition), y=Freq)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    geom_jitter(color="blue", size=1, alpha=0.9, 
+                position = position_jitter(height = .1, width = .1)) +
+    # coord_cartesian(ylim = c(0, 3500)) + # define range
+    xlab("condition") +
+    ylab("peak count")
+
+  # save figure
+ggsave(paste(save_path, "boxplots/pureclip_peak_count.png", sep=''))
 ```
 
 # Gene types of peaks (Barplots)
@@ -277,13 +318,14 @@ write.table(wt_only, file=paste(save_path, "genes/wt_only_gene_list.txt", sep=''
 
 # Peak count distribution (Histograms)
 
-Frequency of crosslink counts (in this case 1 peak = 1 crosslink).
+Frequency of crosslink counts (in this case 1 peak = 1 crosslink) in a gene region.
 
 ```{r fig.width=10, message=FALSE, warning=FALSE}
 binwidth = 1
 cutoff = 1 
 
-df_combined %>%
+df_combined[c("sample", "Entrez.ID", "peak_count")] %>%
+  distinct() %>%
   ggplot(aes(x = peak_count)) +
     geom_histogram(stat = "bin", binwidth = binwidth, fill = "cornflowerblue", col = "black") + 
     facet_wrap(~ sample) +
@@ -297,14 +339,16 @@ ggsave(paste(save_path, "histograms/pureclip_peak_count_distribution.png", sep='
 
 Theoretically, the longer the gene, the more peaks (=crosslinks) it contains. Here, we check if this hypothesis holds true for our data.
 
-```{r}
+```{r fig.height=10, fig.width=15}
 cor.test(df_combined$peak_count, df_combined$gene_length)
 
 # pureclip
-ggplot(df_combined, aes(x = peak_count, y = scale(gene_length))) +
-  geom_point(size = 0.1, shape = 1, col = "black") + 
-  facet_wrap(~ sample) +
-  ggtitle(sprintf('Relationship between gene_length and peak_count in PureCLIP data'), )
+df_combined[c("sample", "Entrez.ID", "peak_count", "gene_length")] %>%
+  distinct() %>%
+  ggplot(aes(x = peak_count, y = gene_length)) +
+    geom_point(size = 0.1, shape = 1, col = "black") + 
+    facet_wrap(~ sample) +
+    ggtitle(sprintf('Relationship between gene_length and peak_count in PureCLIP data'), )
 
 ggsave(paste(save_path, "histograms/pureclip_peak_genelength_histogram.png", sep=''))
 ```
@@ -430,7 +474,7 @@ couples <- df_filtered %>%
   # group by id and sample
   group_by(Entrez.ID, Gene.Name, sample) %>% 
   # # calculate mean of peak score for each entrez id in each sample 
-  summarise(AvgPeakScore=(mean(norm_peakcount_bylength))) %>% 
+  summarise(AvgPeakScore=(mean(peak_count))) %>% 
   # transform tibble so gof 3 and wt 3 have their own columns
   pivot_wider(names_from = sample, values_from = AvgPeakScore) 
 
@@ -450,11 +494,11 @@ ggplot(couples, aes(x=pureclip_wt_3, y=pureclip_gof_3)) +
     data = couples %>% filter(pureclip_wt_3>median(couples$pureclip_wt_3) | pureclip_gof_3>median(couples$pureclip_gof_3)), # filter data first
     aes(label=id), size = 3, vjust="inward",hjust="inward"
     ) +
-  xlab("Average HOMER normalized peak count in GoF 3") +
-  ylab("Average HOMER normalized peak count in WT 3") +
+  xlab("Average normalized peak count in GoF 3") +
+  ylab("Average normalized peak count in WT 3") +
   ggtitle("Genes associated with two or more peaks in GoF 3 and WT 3 samples")
 
-ggsave(paste(save_path, sprintf("scatterplots/s4_cut_%s.png", cutoff), sep=''))
+ggsave(paste(save_path, sprintf("scatterplots/s3_cut_%s.png", cutoff), sep=''))
 
 # couple 4
 ggplot(couples, aes(x=pureclip_wt_4, y=pureclip_gof_4)) +
@@ -463,8 +507,8 @@ ggplot(couples, aes(x=pureclip_wt_4, y=pureclip_gof_4)) +
     data = couples %>% filter(pureclip_wt_4>median(couples$pureclip_wt_4) | pureclip_gof_4>median(couples$pureclip_gof_4)), # filter data first
     aes(label=id), size = 3, vjust="inward",hjust="inward"
     ) +
-  xlab("Average HOMER normalized peak count in GoF 4") +
-  ylab("Average HOMER normalized peak count in WT 4") +
+  xlab("Average normalized peak count in GoF 4") +
+  ylab("Average normalized peak count in WT 4") +
   ggtitle("Genes associated with two or more peaks in GoF 4 and WT 4 samples")
 
 ggsave(paste(save_path, sprintf("scatterplots/s4_cut_%s.png", cutoff), sep=''))
@@ -476,8 +520,8 @@ ggplot(couples, aes(x=pureclip_wt_5, y=pureclip_gof_5)) +
     data = couples %>% filter(pureclip_wt_5>median(couples$pureclip_wt_5) | pureclip_gof_5>median(couples$pureclip_gof_5)), # filter data first
     aes(label=id), size = 3, vjust="inward",hjust="inward"
     ) +
-  xlab("Average HOMER normalized peak count in GoF 5") +
-  ylab("Average HOMER normalized peak count in WT 5") +
+  xlab("Average normalized peak count in GoF 5") +
+  ylab("Average normalized peak count in WT 5") +
   ggtitle("Genes associated with two or more peaks in GoF 5 and WT 5 samples")
 
 ggsave(paste(save_path, sprintf("scatterplots/s5_cut_%s.png", cutoff), sep=''))
@@ -547,13 +591,4 @@ heatmap(gof_coupled,
         )
 # create the file
 dev.off()
-```
-
-```{r}
-
-test <- m_couples[,grepl("pureclip_wt_*", colnames(m_couples))]
-test <- test[apply(test[,-1], 1, function(x) !all(x==0)),]
-data <- test
-
-
 ```

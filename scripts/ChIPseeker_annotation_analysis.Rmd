@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Starting off, this R markdown has a few gene annotation plots using ChIPseeker. Additional examples and plots can be found here: [ChIPseeker manual](https://bioconductor.org/packages/release/bioc/vignettes/ChIPseeker/inst/doc/ChIPseeker.html){.uri} by Guangchuang Yu. Another guide I find useful is [In-depth-NGS-Data-Analysis-Course](https://hbctraining.github.io/In-depth-NGS-Data-Analysis-Course/sessionV/lessons/12_annotation_functional_analysis.html){.uri} by Mary Piper and Meeta Mistry.
 
-The other plots are made using mostly ggplots2.
+The other plots are made using mostly ggplot2.
 
 ### Data, packages and versions
 
@@ -49,22 +49,7 @@ In case you prefer to use USCS instead of Ensembl, you may need to install addit
 
 -   Yu G, Wang L, He Q (2015). "ChIPseeker: an R/Bioconductor package for ChIP peak annotation, comparison and visualization." *Bioinformatics*, **31**(14), 2382-2383. [doi:10.1093/bioinformatics/btv145](https://doi.org/10.1093/bioinformatics/btv145).
 
-```{r message=FALSE, warning=FALSE}
-citation("ChIPseeker")
-citation("RMariaDB")
-citation("GenomicFeatures")
-citation("UpSetR")
-citation("ggupset")
-citation("biomaRt") # to generate gene lengths
-citation("ggplot2") # for plotting
-citation("RColorBrewer") # for generation of palettes
-citation("data.table") # for data storage and manipulation
-citation("Rsubread") # ???
-citation("randomcoloR") # for generation of palettes
-citation("tidyverse") # we use many modules from this package
-citation("scales") # for plotting
-citation("ggrepel") # for plotting
-```
+`{# {r message=FALSE, warning=FALSE} # citation("ChIPseeker") # citation("RMariaDB") # citation("GenomicFeatures") # citation("UpSetR") # citation("ggupset") # citation("biomaRt") # to generate gene lengths # citation("ggplot2") # for plotting # citation("RColorBrewer") # for generation of palettes # citation("data.table") # for data storage and manipulation # citation("Rsubread") # ??? # citation("randomcoloR") # for generation of palettes # citation("tidyverse") # we use many modules from this package # citation("scales") # for plotting # citation("ggrepel") # for plotting`
 
 # Load libraries and paths
 
@@ -98,7 +83,7 @@ paste(save_path, 'name', sep='')
 ```{r message=FALSE, warning=FALSE}
 # load txdb for homosapiens, which stores transcript annotations
 txdb <- makeTxDbFromEnsembl(organism="Homo sapiens",
-                    release=NA,
+                    release=110,
                     circ_seqs=NULL,
                     server="ensembldb.ensembl.org",
                     username="anonymous", password=NULL, port=0L,
@@ -119,13 +104,18 @@ peakAnnoList <- lapply(files, annotatePeak, TxDb=txdb,
 ```
 
 ```{r}
+dir.create(paste(save_path, 'chipseeker', sep=''), showWarnings = FALSE)
+
 # barplot
+png(file=paste(save_path, "chipseeker/annotation_barplot.png", sep=''))
 plotAnnoBar(peakAnnoList)
+dev.off()
 
 # distance to TSS
+png(file=paste(save_path, "chipseeker/TSS_barplot.png", sep=''))
 plotDistToTSS(peakAnnoList, 
               title="Distribution of transcription factor-binding loci \n relative to TSS")
-
+dev.off()
 ```
 
 # Prepare dataframe
@@ -154,7 +144,7 @@ df_combined
 
 ## Adding, removing and changing columns
 
-Adjusting the dataframe so it fits the analysis also used for HOMER (so I can reuse the code).
+Adjusting the dataframe so it fits the analysis also used for HOMER (so I can reuse the code). **FIX ROW COUNT**
 
 **See if you can add external_gene_name to get more gene names!**
 
@@ -242,7 +232,7 @@ If you are not interested in intergenic hits, you can filter them out. You can c
 
 ```{r}
 # to see how much you're filtering out:
-df_combined %>% filter(simple_annotation == 'Intergenic')
+df_combined %>% filter(simple_annotation == 'Distal Intergenic')
 
 # actual filtering:
 # df_combined <- df_combined %>% filter(simple_annotation == 'Intergenic')
@@ -259,6 +249,26 @@ types <- unique(df_combined$Gene.Type)
 types <- types[order(names(setNames(types, types)))]
 names(myColor) <- types
 myColor
+```
+
+# Peak counts (Boxplots)
+
+```{r}
+# peak counts per sample
+peak_counts <- data.frame(table(df_combined$sample))
+# condition
+peak_counts$condition <- c(rep("gof",3),rep("wt",3))
+
+ggplot(peak_counts, aes(x=as.factor(condition), y=Freq)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    geom_jitter(color="blue", size=1, alpha=0.9, 
+                position = position_jitter(height = .1, width = .1)) +
+    # coord_cartesian(ylim = c(0, 6000)) +
+    xlab("condition") +
+    ylab("peak count")
+
+  # save figure
+ggsave(paste(save_path, "boxplots/pureclip_peak_count.png", sep=''))
 ```
 
 # Gene types of peaks (Barplots)
