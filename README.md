@@ -95,6 +95,7 @@ This project is currently ongoing. Possible improvements include:
 - Compatibility with other container runtimes (e.g. Docker, Appcontainer, conda) to improve accessibility (currently only Singularity is supported)
 - Testing and improving performance (runtime, speed, resources)
 - Error testing
+- Testing for different operating systems (has only been tested on Linux Ubuntu 22.04.3)
 
 # Authors
 This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows.
