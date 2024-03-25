@@ -1,15 +1,28 @@
 # wf-iclipseq
 wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis of iCLIP data. It takes demultiplexed single-end reads (.fastq.gz), a gene annotation file, and a reference genome file to perform pre-processing (incl. quality control, adapter trimming, rRNA filtering), post-processing (incl. genome alignment and crosslink extraction) and downstream analysis (gene annotation, motif analysis). The gene annotation results can be further visualized, taking the bash and R scripts in the [scripts/](scripts/) folder as reference. 
 
-The figure below shows the pipeline overview.
-Steps in the pipeline (with the exception of STAR alignment, for the time being) can be skipped using the [conf/params.config](conf/params.config) file.
-
-
-
-
-
 ![Alt text](figures/pipeline_workflow.png?raw=true "Pipeline design")
 
+1. Removing whitespaces and special characters in read IDs (Bash)
+2. Quality control ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+3. Barcode extraction ([UMI-Tools](https://github.com/CGATOxford/UMI-tools)
+4. Adapter and quality trimming ([TrimGalore!](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/))
+5. Ribosomal RNA filtering ([SortMeRNA](https://github.com/sortmerna/sortmerna) or [Ribodetector](https://github.com/hzi-bifo/RiboDetector))
+6. Quality control of non-RNA reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+7. Genome alignment ([STAR](https://github.com/alexdobin/STAR))
+     7.5. Quality control of unmapped reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+8. Deduplication ([UMI-Tools](https://github.com/CGATOxford/UMI-tools)
+9. Alignment sorting and indexing ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
+10. Quality control of deduplicated reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+11. Extract crosslink event ([BEDTools](https://github.com/arq5x/bedtools2/))
+      11.5 BED to Bigwig coverage track([bedGraphToBigWig](https://hgdownload.soe.ucsc.edu/admin/exe/))
+12. Peak calling ([PureCLIP](https://github.com/skrakau/PureCLIP) and/or [MACS2](https://github.com/macs3-project/MACS))
+13. Gene annotation (Bash & [BEDTools](https://github.com/arq5x/bedtools2/) and/or [HOMER](http://homer.ucsd.edu/homer/download.html))
+14. Custom scripts for visualization of results ([R](https://www.r-project.org/))
+15. Motif detection ([MEME suite](https://meme-suite.org/meme/doc/download.html))
+16. Summarizing results up to the last quality control step ([MultiQC](https://multiqc.info/))
+
+Steps in the pipeline (with the exception of STAR alignment, for the time being) can be skipped using the [conf/params.config](conf/params.config) file. The pipeline contains multiple quality control steps which can be used to closely monitor the data before peak calling. By default, quality control before and after trimming is enabled, while the others are disabled.
 
 # Requirements
 Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can be installed using Conda. To download Conda, follow this [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html). Check that Conda is up-to-date:
@@ -105,4 +118,4 @@ This project is currently ongoing. Possible improvements include:
 - Testing for different operating systems (has only been tested on Linux Ubuntu 22.04.3)
 
 # Authors
-This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows. See [link](link) file for a list of references.
+This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows. The paper by [Busch et al. 2020](https://www.sciencedirect.com/science/article/pii/S1046202318304948?via%3Dihub) was also used. See [CITATION.md](CITATION.md) file for a full list of references.
