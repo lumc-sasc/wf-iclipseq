@@ -5,7 +5,7 @@ wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis o
 
 1. Removing whitespaces and special characters in read IDs (Bash)
 2. Quality control ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-3. Barcode extraction ([UMI-Tools](https://github.com/CGATOxford/UMI-tools)
+3. Barcode extraction ([UMI-Tools](https://github.com/CGATOxford/UMI-tools))
 4. Adapter and quality trimming ([TrimGalore!](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/))
 5. Ribosomal RNA filtering ([SortMeRNA](https://github.com/sortmerna/sortmerna) or [Ribodetector](https://github.com/hzi-bifo/RiboDetector))
 6. Quality control of non-RNA reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
