@@ -11,7 +11,7 @@ wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis o
 6. Quality control of non-RNA reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 7. Genome alignment ([STAR](https://github.com/alexdobin/STAR))
      7.5. Quality control of unmapped reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-8. Deduplication ([UMI-Tools](https://github.com/CGATOxford/UMI-tools)
+8. Deduplication ([UMI-Tools](https://github.com/CGATOxford/UMI-tools))
 9. Alignment sorting and indexing ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
 10. Quality control of deduplicated reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 11. Extract crosslink event ([BEDTools](https://github.com/arq5x/bedtools2/))
