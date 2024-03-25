@@ -1,8 +1,15 @@
 # wf-iclipseq
-Nextflow pipeline for analyzing iCLIP data.
+wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis of iCLIP data. It takes demultiplexed single-end reads (.fastq.gz), a gene annotation file, and a reference genome file to perform pre-processing (incl. quality control, adapter trimming, rRNA filtering), post-processing (incl. genome alignment and crosslink extraction) and downstream analysis (gene annotation, motif analysis). The gene annotation results can be further visualized, taking the bash and R scripts in the [scripts/](scripts/) folder as reference. 
 
-# Pipeline
-TBA: workflow overview.
+The figure below shows the pipeline overview.
+Steps in the pipeline (with the exception of STAR alignment, for the time being) can be skipped using the [conf/params.config](conf/params.config) file.
+
+
+
+
+
+![Alt text](figures/pipeline_workflow.png?raw=true "Pipeline design")
+
 
 # Requirements
 Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can be installed using Conda. To download Conda, follow this [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html). Check that Conda is up-to-date:
@@ -71,7 +78,7 @@ Those in **bold** are mandatory to run the pipeline.
 If control_bam is provided, it is imperative that control_bai is provided as well!
 **Note: This pipeline has been tested for single-end reads, and may not support paired-end reads (remains to be tested).**
 
-By default, the reference genome and annotation are specified in the `conf/params.config`. You can use these and move on to running the pipeline or you can replace these with your own.
+By default, the reference genome and annotation are specified in the [conf/params.config](conf/params.config) file. You can use these and move on to running the pipeline or you can replace these with your own.
 ```
 fasta                      = "https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz"
 gtf                        = "https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz"
@@ -84,13 +91,13 @@ nextflow run main.nf
 If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
 
 # Errors
-- exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the `conf/resources.config` file.
+- exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the [conf/resources.config](conf/resources.config) file.
 - PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
 
 # Future work
 This project is currently ongoing. Possible improvements include:
 
-- Benchmarking
+- Benchmarking with public iCLIP datasets
 - Including a test case
 - Compatibility with other container runtimes (e.g. Docker, Appcontainer, conda) to improve accessibility (currently only Singularity is supported)
 - Testing and improving performance (runtime, speed, resources)
@@ -98,4 +105,4 @@ This project is currently ongoing. Possible improvements include:
 - Testing for different operating systems (has only been tested on Linux Ubuntu 22.04.3)
 
 # Authors
-This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows.
+This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows. See [link](link) file for a list of references.
