@@ -103,6 +103,10 @@ nextflow run main.nf
 ```
 If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
 
+# Output
+TBA.
+
+
 # Errors
 - exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the [conf/resources.config](conf/resources.config) file.
 - PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
