@@ -1,7 +1,9 @@
 # wf-iclipseq
 wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis of iCLIP data. It takes demultiplexed single-end reads (.fastq.gz), a gene annotation file, and a reference genome file to perform pre-processing (incl. quality control, adapter trimming, rRNA filtering), post-processing (incl. genome alignment and crosslink extraction) and downstream analysis (gene annotation, motif analysis). The gene annotation results can be further visualized, taking the bash and R scripts in the [scripts/](scripts/) folder as reference. 
 
+
 ![Alt text](figures/pipeline_workflow.png?raw=true "Pipeline design")
+
 
 1. Removing whitespaces and special characters in read IDs (Bash)
 2. Quality control ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
@@ -116,7 +118,7 @@ TBA.
 Possible improvements include:
 
 - Benchmarking with public iCLIP datasets
-- Including a test case
+- Including a test case and a tutorial
 - Compatibility with other container runtimes (e.g. Docker, Appcontainer, conda) to improve accessibility (currently only Singularity is supported)
 - Testing and improving performance (runtime, speed, resources)
 - Error testing
