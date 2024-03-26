@@ -1,4 +1,4 @@
-# lumc-sacs/wf-iclipseq: Citations
+![image](https://github.com/lumc-sasc/wf-iclipseq/assets/91152459/6023f29e-8af1-4783-87b4-07343abb85a4)# lumc-sacs/wf-iclipseq: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -42,6 +42,15 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+- [PureCLIP](https://doi.org/10.1186/s13059-017-1364-2)
+  
+  > Krakau S, Richard H, Marsico A: PureCLIP: Capturing target-specific protein-RNA interaction footprints from single-nucleotide CLIP-seq data. Genome Biology 2017; 18:240; https://doi.org/10.1186/s13059-017-1364-2
+
+- [MEME suite](https://academic.oup.com/nar/article/43/W1/W39/2467905)
+
+  > Timothy L. Bailey, James Johnson, Charles E. Grant, William S. Noble, "The MEME Suite", Nucleic Acids Research, 43(W1):W39-W49, 2015.
+  > Timothy L. Bailey, "STREME: accurate and versatile sequence motif discovery", Bioinformatics, Mar. 24, 2021.
+
 - [Ribodetector](https://doi.org/10.1093/nar/gkac112)
 
   > Zhi-Luo Deng, Philipp C Münch, René Mreches, and Alice C McHardy. Rapid and accurate identification of ribosomal RNA sequences via deep learning. Nucleic Acids Research, 50(10):e60–e60, 02 2022. ISSN 0305-1048. doi: 10.1093/nar/gkac112.
@@ -77,15 +86,42 @@
 
   > R Core Team (2017). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria.
 
+- [biomaRt](10.18129/B9.bioc.biomaRt)
+
+  > Mapping identifiers for the integration of genomic datasets with the R/Bioconductor package biomaRt. Steffen Durinck, Paul T. Spellman, Ewan Birney and Wolfgang Huber, Nature Protocols 4, 1184-1191 (2009).
+  > BioMart and Bioconductor: a powerful link between biological databases and microarray data analysis. Steffen Durinck, Yves Moreau, Arek Kasprzyk, Sean Davis, Bart De Moor, Alvis Brazma and Wolfgang Huber, Bioinformatics 21, 3439-3440 (2005).
+
+- [data.table](https://CRAN.R-project.org/package=data.table)
+
+  > Barrett T, Dowle M, Srinivasan A, Gorecki J, Chirico M, Hocking T (2024). _data.table: Extension of `data.frame`_. R package version 1.15.2, <https://CRAN.R-project.org/package=data.table>
+
 - [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
 
   > H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+
+- [ggrepel](https://CRAN.R-project.org/package=ggrepel>)
+  > Slowikowski K (2024). _ggrepel: Automatically Position Non-Overlapping Text Labels with 'ggplot2'_. R package version 0.9.5,
+  <https://CRAN.R-project.org/package=ggrepel>
+
+- [magittr](https://CRAN.R-project.org/package=magrittr)
+
+  > Bache S, Wickham H (2022). _magrittr: A Forward-Pipe Operator for R_. R package version 2.0.3, <https://CRAN.R-project.org/package=magrittr>
+
+- [randomcoloR](https://CRAN.R-project.org/package=randomcoloR)
+
+  > Ammar R (2019). _randomcoloR: Generate Attractive Random Colors_. R package version 1.1.0.1, <https://CRAN.R-project.org/package=randomcoloR>
 
 - [scales](https://CRAN.R-project.org/package=scales)
 
   > Hadley Wickham (2018). scales: Scale Functions for Visualization.
 
+- [stringi](https://doi.org/10.18637/jss.v103.i02)
 
+  > Gagolewski M (2022). “stringi: Fast and portable character string processing in R.” _Journal of Statistical Software_, *103*(2), 1-59. doi:10.18637/jss.v103.i02 <https://doi.org/10.18637/jss.v103.i02>
+
+- [tidyverse](https://doi.org/10.21105/joss.01686)
+
+  > Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M, Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_, *4*(43), 1686. doi:10.21105/joss.01686 <https://doi.org/10.21105/joss.01686>.
 
 ## Software packaging/containerisation tools
 
