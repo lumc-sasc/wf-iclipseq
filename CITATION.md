@@ -1,4 +1,4 @@
-![image](https://github.com/lumc-sasc/wf-iclipseq/assets/91152459/6023f29e-8af1-4783-87b4-07343abb85a4)# lumc-sacs/wf-iclipseq: Citations
+# lumc-sacs/wf-iclipseq: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
