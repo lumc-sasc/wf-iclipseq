@@ -1,30 +1,47 @@
 # wf-iclipseq
-wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis of iCLIP data. It takes demultiplexed single-end reads (.fastq.gz), a gene annotation file, and a reference genome file to perform pre-processing (incl. quality control, adapter trimming, rRNA filtering), post-processing (incl. genome alignment and crosslink extraction) and downstream analysis (gene annotation, motif analysis). The gene annotation results can be further visualized, taking the bash and R scripts in the [scripts/](scripts/) folder as reference. 
+wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis of iCLIP data. It takes demultiplexed single-end reads (.fastq.gz), a gene annotation file, and a reference genome file to perform pre-processing (incl. quality control (QC), adapter trimming, rRNA filtering), post-processing (incl. genome alignment and crosslink extraction) and downstream analysis (gene annotation, motif analysis). The gene annotation results can be further visualized, taking the bash and R scripts in the [scripts/](scripts/) folder as reference. 
 
 
 ![Alt text](figures/pipeline_workflow.png?raw=true "Pipeline design")
 
 
 1. Removing whitespaces and special characters in read IDs (Bash)
-2. Quality control ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. QC on raw reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 3. Barcode extraction ([UMI-Tools](https://github.com/CGATOxford/UMI-tools))
-4. Adapter and quality trimming ([TrimGalore!](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/))
-5. Ribosomal RNA filtering ([SortMeRNA](https://github.com/sortmerna/sortmerna) or [Ribodetector](https://github.com/hzi-bifo/RiboDetector))
-6. Quality control of non-RNA reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+4. Adapter and quality trimming ([Trim Galore!](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/))
+5. Ribosomal RNA filtering ([SortMeRNA](https://github.com/sortmerna/sortmerna) or [Ribodetector](https://github.com/hzi-bifo/RiboDetector)*)
+6. Quality control on non-RNA reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 7. Genome alignment ([STAR](https://github.com/alexdobin/STAR))
-8. Quality control of unmapped reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+8. Quality control on unmapped reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
 9. Deduplication ([UMI-Tools](https://github.com/CGATOxford/UMI-tools))
 10. Alignment sorting and indexing ([SAMtools](https://sourceforge.net/projects/samtools/files/samtools/))
-11. Quality control of deduplicated reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-12. Extract crosslink event ([BEDTools](https://github.com/arq5x/bedtools2/))
-13. BED to Bigwig coverage track([bedGraphToBigWig](https://hgdownload.soe.ucsc.edu/admin/exe/))
+11. Quality control on deduplicated reads ([FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+12. Extract crosslink events ([BEDTools](https://github.com/arq5x/bedtools2/))
+13. BED to BigWig coverage tracks ([bedGraphToBigWig](https://hgdownload.soe.ucsc.edu/admin/exe/))
 14. Peak calling ([PureCLIP](https://github.com/skrakau/PureCLIP) and/or [MACS2](https://github.com/macs3-project/MACS))
 15. Gene annotation (Bash & [BEDTools](https://github.com/arq5x/bedtools2/) and/or [HOMER](http://homer.ucsd.edu/homer/download.html))
 16. Custom scripts for visualization of results ([R](https://www.r-project.org/) and [various packages](https://github.com/lumc-sasc/wf-iclipseq/blob/main/CITATION.md#r-packages))
-17. Motif detection ([MEME suite](https://meme-suite.org/meme/doc/download.html))
+17. Motif detection ([STREME](https://meme-suite.org/meme/doc/download.html))
 18. Summarizing results up to the last quality control step ([MultiQC](https://multiqc.info/))
 
 Steps in the pipeline (with the exception of STAR alignment, for the time being) can be skipped using the [conf/params.config](conf/params.config) file. The pipeline contains multiple quality control steps which can be used to closely monitor the data before peak calling. By default, quality control before and after trimming is enabled, while the others are disabled.
+
+*not included in the pipeline yet, but the pipeline does contain the nextflow script.
+
+## Default run
+By default, the pipeline performs the following things:
+1. QC on raw reads by FastQC
+2. Quality and adapter trimming by Trim Galore!
+3. Genome indexing by STAR
+4. Genome alignment by STAR (allowing multimappers, with `--outFilterMultimapNmax 20` and doing chimeric detection)
+5. Alignment sorting and indexing by SAMtools
+6. Deduplication by UMI-Tools
+7. Crosslink extraction
+8. Peak calling by PureCLIP
+9. Resizing PureCLIP binding sites for gene annotation by 8bp (change this to match your RBPs binding footprint, can also be deactivated)
+10. Gene annotation by Bash & BEDTools, and HOMER
+11. Motif detection by STREME
+12. Report by MultiQC
 
 # Requirements
 Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can be installed using Conda. To download Conda, follow this [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html). Check that Conda is up-to-date:
@@ -81,7 +98,7 @@ It is mandatory to provide a **samplesheet.csv** in the `input/` folder that has
 sample,fastq_1,fastq_2,control_bam,control_bai
 s_1,/path/to/fastq.gz/,,,
 s_2,/path/to/R1_fastq.gz/,/path/to/R2_fastq.gz/,,
-s_3,/path/to/fastq.gz/,,/path/to/input.bam,/path/to/input.bai
+s_3,/path/to/fastq.gz/,,/path/to/input.bam,/path/to/input.bam.bai
 ```
 Those in **bold** are mandatory to run the pipeline.
 - **sample**: sample name, make sure it does not contain periods as that may cause errors
