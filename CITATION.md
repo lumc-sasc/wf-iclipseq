@@ -49,6 +49,7 @@
 - [MEME suite](https://academic.oup.com/nar/article/43/W1/W39/2467905)
 
   > Timothy L. Bailey, James Johnson, Charles E. Grant, William S. Noble, "The MEME Suite", Nucleic Acids Research, 43(W1):W39-W49, 2015.
+
   > Timothy L. Bailey, "STREME: accurate and versatile sequence motif discovery", Bioinformatics, Mar. 24, 2021.
 
 - [Ribodetector](https://doi.org/10.1093/nar/gkac112)
@@ -89,6 +90,7 @@
 - [biomaRt](10.18129/B9.bioc.biomaRt)
 
   > Mapping identifiers for the integration of genomic datasets with the R/Bioconductor package biomaRt. Steffen Durinck, Paul T. Spellman, Ewan Birney and Wolfgang Huber, Nature Protocols 4, 1184-1191 (2009).
+
   > BioMart and Bioconductor: a powerful link between biological databases and microarray data analysis. Steffen Durinck, Yves Moreau, Arek Kasprzyk, Sean Davis, Bart De Moor, Alvis Brazma and Wolfgang Huber, Bioinformatics 21, 3439-3440 (2005).
 
 - [data.table](https://CRAN.R-project.org/package=data.table)
