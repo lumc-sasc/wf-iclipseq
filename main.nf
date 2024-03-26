@@ -17,7 +17,7 @@ fasta            : $params.fasta
 gtf              : $params.gtf
 star_index dir   : $params.star_index
 ================================
-      PROCESSES ENABLED
+      MAIN PROCESSES ENABLED?
 REMOVE SPECIAL CHAR FROM READ NAME        : $params.remove_characters  
 SKIP PREPARE GENOME                       : $params.skip_prepare_genome    
 SKIP FASTQC                               : $params.skip_fastqc
@@ -35,6 +35,8 @@ SKIP FASTQC AFTER DEDUPLICATION           : $params.skip_fastqc_after_dedup
 SKIP EXTRACT CROSSLINKS                   : $params.skip_extract_crosslinks
 SKIP BEDGRAPH TO BIGWIG FILE CONVERSION   : $params.skip_bedgraphtobigwig
 SKIP PURECLIP                             : $params.skip_pureclip
+SKIP MACS2                                : $params.skip_macs2
+SKIP MOTIF ANALYSIS                       : $params.skip_motif_detection
 SKIP MULTIQC                              : $params.skip_multiqc
 ================================
       IMPORTANT PROCESS PARAMS          
@@ -50,6 +52,8 @@ save_reference (STAR)                     : $params.save_reference
 save_unaligned (STAR)                     : $params.save_unaligned
 save_align_intermeds (STAR)               : $params.save_align_intermeds
 save_extract_crosslink_intermeds (BEDTools) : $params.save_extract_crosslink_intermeds
+save_intermediate_peak_id (Bash)          : $params.save_intermediate_peak_id
+save_binding_width_intermeds (BEDTools)   : $params.save_binding_width_intermeds
 
 NOTE: In its current state the pipeline may NOT work entirely if some processes are not run. Still needs to be tested.
 """
@@ -138,7 +142,7 @@ workflow {
       }
 
       // SUBWORKFLOW FASTQC + UMITOOLS + TRIMGALORE (CUTADAPT)
-      // does fastqc + trimgalore (cutadapt) + umitools to remove adapters, barcodes, low quality 3' ends
+      // does fastqc + trimgalore (cutadapt) + umitools to remove adapters, relocate barcodes, low quality 3' ends
       ch_filtered_reads      = Channel.empty()
       ch_fastqc_raw_multiqc  = Channel.empty()
       ch_fastqc_trim_multiqc = Channel.empty()
@@ -167,6 +171,7 @@ workflow {
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
       ch_sortmerna_multiqc          = Channel.empty()
+      ch_fastqc_filtered_multiqc = Channel.empty()
       ch_filtered_reads             = ch_trimmed_reads          // if rna filtering is skipped
 
       if (params.remove_ribo_rna) {
@@ -185,8 +190,6 @@ workflow {
 
             // MODULE FASTQC
             // do quality control on data after rRNA removal
-            ch_fastqc_filtered_multiqc = Channel.empty()
-
             if (!params.skip_fastqc_after_ribo_removal) {
                   FASTQC_AFTER_SORTMERNA ( ch_filtered_reads )
 
@@ -266,7 +269,7 @@ workflow {
 
 
             // SUBWORKFLOW: Remove duplicate reads from BAM file based on UMIs
-            // deduplication using UMI-Tools (include mapped to multiple loci!)
+            // deduplication using UMI-Tools
             if (params.with_umi) {
                   // deduplicate genome BAM file before downstream analysis
                   BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_GENOME (
@@ -418,9 +421,11 @@ workflow {
 
       // perform motif analysis using STREME, generates a .html report (and optionally .tsv, .txt, .xml files)
       // uses pureclip results as pureclip is designed for iCLIP datasets specifically
-      STREME (
-        RESIZE_SITES.out.peak_fasta
-      )
+      if (!params.skip_motif_detection){
+            STREME (
+            RESIZE_SITES.out.peak_fasta
+            )
+      }
 
       // MODULE MULTIQC
       // make multiqc report
