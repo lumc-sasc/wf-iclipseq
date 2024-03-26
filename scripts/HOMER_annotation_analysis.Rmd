@@ -9,36 +9,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Preface
-
-Starting off, this R markdown has a few gene annotation plots using...
-
-### Data, packages and versions
-
-For this R package to work with R, you need to install the following packages:
-
-E.g.:
-
-```{r}
-# BiocManager::install("ChIPseeker", force=TRUE) 
-# # you can specify your library if needed by adding: 
-# # lib = "/home/USER/R/x86_64-pc-linux-gnu-library/X.X"
-```
-
 # Load libraries
 
-Install as needed with `install.packages("namelib")`, where `namelib` is the name of the library.
+Install as needed with `install.packages("namelib")`, where `namelib` is the name of the library, or `BiocManager::install("NAME")`. Optionally try: `BiocManager::install("NAME", force=TRUE, lib = "/home/USER/R/x86_64-pc-linux-gnu-library/X.X")` if you encounter errors.
 
 ```{r include=FALSE}
-library(ggplot2) # for plotting
-library(RColorBrewer) # for generation of palettes
-library(data.table) # for data storage and manipulation
-library(Rsubread) # ???
-library(randomcoloR) # for generation of palettes
-library(tidyverse) # we use many modules from this package
-library(biomaRt) # to generate gene lengths
-library(scales) # for plotting
-library(ggrepel) # for plotting
+# developed in R 4.3.2
+
+library(biomaRt) # v2.58.2, to generate gene lengths
+library(data.table) # v1.15.2, data storage
+library(stringi) # v1.8.3, for data manipulation
+library(ggplot2) # v3.5.0, for making figures
+library(tidyverse) # v2.0.0, data storage and manipulation, making figures
+library(scales) # v1.3.0, for making figures
+library(ggrepel) # v0.9.5 for making figures
+library(randomcoloR) # v1.1.0.1, for generation of palettes
 ```
 
 # Load data
@@ -46,8 +31,10 @@ library(ggrepel) # for plotting
 Loading the HOMER annotation files. I load each file separately (which is less convenient if you have many files, but in my case is doable). Make sure to set your work directory correctly to save the upcoming figures in the right folders. You can also specify the general path of your annotation data and the folder where you want to save your graphs below:
 
 ```{r}
-general_path = "/exports/sascstudent/amhsilie/wf-iclipseq/all_iclip/results_nocontrol/results/downstream_analysis/homer/" # <- do not forget the last /
-save_path = "/exports/sascstudent/amhsilie/iclip_downstream/final_annotation/homer/nocontrol/" 
+# path to data
+general_path = '/path/to/data/' # <- do not forget the last /
+# path to save figures to
+save_path = '/path/to/save/figures/' # <- do not forget the last /
 
 # this is how we will save our plots later:
 paste(save_path, 'name', sep='')
@@ -230,8 +217,6 @@ ggsave(paste(save_path, "boxplots/pureclip_peak_count.png", sep=''))
 
 Note: A gene can contain multiple crosslink sites (in this case 1 peak = 1 crosslink), thus multiple peaks. Therefore, some gene types may be overrepresented in these barplots.
 
-**Need to add absolute values to the plot!**
-
 ```{r echo=FALSE, fig.align="center", fig.width=15, message=FALSE, warning=FALSE}
 
 # omit rows where Gene.Type = NA
@@ -357,8 +342,6 @@ ggsave(paste(save_path, "histograms/pureclip_peak_genelength_histogram.png", sep
 
 We now look at the individual genes instead of the peaks. Each gene (or Entrez.ID?) is therefore represented only once.
 
-**Need to add absolute values to fraction graph!**
-
 ```{r fig.width=15, message=FALSE, warning=FALSE}
 # each gene occurs only ONCE in its category regardless of peak intensity or count
 df_combined %>%
@@ -454,7 +437,7 @@ df_combined %>%
   slice_max(order_by = norm_peakcount_bylength, n = 100)
 ```
 
-# Plots as discussed on 28-02-2024
+# Analyzing prominent genes
 
 ## Scatterplots
 

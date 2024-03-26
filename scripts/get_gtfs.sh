@@ -1,3 +1,6 @@
+### this script uses the BedTools suite! make sure to install it, for example using Conda.. ###
+
+### make directory ###
 mkdir gtf
 
 ### make separate gtf files for the features (intron later) ###
