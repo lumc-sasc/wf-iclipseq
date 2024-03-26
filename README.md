@@ -20,7 +20,7 @@ wf-iclipseq is a bioinformatic pipeline developed in Nextflow for the analysis o
 13. BED to Bigwig coverage track([bedGraphToBigWig](https://hgdownload.soe.ucsc.edu/admin/exe/))
 14. Peak calling ([PureCLIP](https://github.com/skrakau/PureCLIP) and/or [MACS2](https://github.com/macs3-project/MACS))
 15. Gene annotation (Bash & [BEDTools](https://github.com/arq5x/bedtools2/) and/or [HOMER](http://homer.ucsd.edu/homer/download.html))
-16. Custom scripts for visualization of results ([R](https://www.r-project.org/))
+16. Custom scripts for visualization of results ([R](https://www.r-project.org/) and [various packages](https://github.com/lumc-sasc/wf-iclipseq/blob/main/CITATION.md#r-packages))
 17. Motif detection ([MEME suite](https://meme-suite.org/meme/doc/download.html))
 18. Summarizing results up to the last quality control step ([MultiQC](https://multiqc.info/))
 
