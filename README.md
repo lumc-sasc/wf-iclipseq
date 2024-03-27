@@ -43,6 +43,43 @@ By default, the pipeline performs the following things:
 11. Motif detection by STREME
 12. Report by MultiQC
 
+### Output created by default run
+The output of a default run creates the following tree:
+```bash
+├── 01_fastqc
+├── 02_trimgalore
+│   └── fastqc
+├── 04_star
+│   ├── log
+│   ├── samtools_stats
+│   └── umitools
+│       ├── bai
+│       ├── bam
+│       └── fastqc
+├── 05_extract_crosslinks
+│   └── 06_crosslink
+│       ├── merged
+│       ├── neg
+│       └── pos
+├── 06_peak_calling
+│   └── pureclip
+├── 07_downstream_analysis
+│   ├── 00_sites_with_peakID
+│   ├── 01_bedtools_annotations
+│   ├── 01_homer_annotations
+│   └── 02_streme_motifs
+│       └── bedtools_resized
+├── 08_multiqc
+│   ├── multiqc_data
+│   └── multiqc_plots
+│       ├── pdf
+│       ├── png
+│       └── svg
+└── pipeline_info
+```
+
+If rRNA filtering is enabled, there will be a folder named `03_sortmerna/`.
+
 # Requirements
 Nextflow (>23.04.4) and Singularity are required to run this pipeline. Both can be installed using Conda. To download Conda, follow this [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html). Check that Conda is up-to-date:
 
