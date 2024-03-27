@@ -8,7 +8,7 @@
 
 > Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C. Nextflow enables reproducible computational workflows. Nat Biotechnol. 2017 Apr 11;35(4):316-319. doi: 10.1038/nbt.3820. PubMed PMID: 28398311.
 
-## Other pipelines
+## Other pipelines or literature
 
 - [rnaseq](https://doi.org/10.5281/zenodo.10471647)
 > Harshil Patel, Phil Ewels, Alexander Peltzer, Jonathan Manning, Olga Botvinnik, Gregor Sturm, Maxime U Garcia, Denis Moreno, Pranathi Vemuri, nf-core bot, Mahesh Binzer-Panchal, silviamorins, Lorena Pantano, Matthias Zepper, Robert Syme, Adam Talbot, Gavin Kelly, Friederike Hanssen, James A. Fellows Yates, … Paolo Di Tommaso. (2024). nf-core/rnaseq: nf-core/rnaseq v3.14.0 - Hassium Honey Badger (3.14.0). Zenodo. https://doi.org/10.5281/zenodo.10471647
@@ -19,6 +19,8 @@
 - [Busch et al. (2020)](https://www.sciencedirect.com/science/article/pii/S1046202318304948)
 > Anke Busch, Mirko Brüggemann, Stefanie Ebersberger, and Kathi Zarnack. iclip data analysis: A complete pipeline from sequencing reads to rbp binding sites. Methods, 178:49–62, 2020. ISSN 1046-2023. doi: https://doi.org/10.1016/j.ymeth.2019.11.008. URL https://www.sciencedirect.com/science/article/pii/S1046202318304948.
 
+- [Huppertz et al. 2014](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3988997/)
+> Huppertz I, Attig J, D'Ambrogio A, Easton LE, Sibley CR, Sugimoto Y, Tajnik M, König J, Ule J. iCLIP: protein-RNA interactions at nucleotide resolution. Methods. 2014 Feb;65(3):274-87. doi: 10.1016/j.ymeth.2013.10.011. Epub 2013 Oct 25. PMID: 24184352; PMCID: PMC3988997.
 
 ## Pipeline tools
 
