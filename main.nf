@@ -199,7 +199,7 @@ workflow {
       }
 
 
-      // SUBWORKFLOW STAR GENERATE GENOME
+      // SUBWORKFLOW STAR GENERATE GENOME from nf-core
       // STAR genome indexing
       if (!params.skip_prepare_genome) {
             PREPARE_GENOME (
@@ -336,6 +336,8 @@ workflow {
             STEP 3: analysis 
       */
 
+      // MODULE (local)
+      // performs peak calling using PureCLIP    
       if (!params.skip_pureclip) {
             PURECLIP ( 
                   ch_genome_bam,
@@ -346,7 +348,8 @@ workflow {
             pureclip_crosslink_regions    = PURECLIP.out.regions_bed
       }
 
-      // MACS2, a broad peak caller
+      // MODULE from nf-core
+      // performs peak calling using MACS2
       if (!params.skip_macs2) {
             MACS2_CALLPEAK ( 
                   ch_genome_bam,  
@@ -356,6 +359,7 @@ workflow {
             ch_versions       = ch_versions.mix(MACS2_CALLPEAK.out.versions.first())
       }
 
+      // SUBWORKFLOW (local)
       // resize binding sites for motif analysis and POSSIBLY gene annotation
       RESIZE_SITES (
             pureclip_crosslink_sites,
@@ -368,9 +372,10 @@ workflow {
             pureclip_crosslink_sites = RESIZE_SITES.out.resized_bed
       }
 
-
-      // bedtools intersection of bed file with gtf
+      // MODULES (local)
+      // bedtools annotation of peak bed files by intersecting with gtf
       if (!params.skip_bedtools_annotation) {
+            // PureCLIP peaks
             if (!params.skip_pureclip) {
                   // replace column 4 with unique peak names (macs2 already has these IDs)
                   UNIQUE_PEAK_NAME (
@@ -385,7 +390,7 @@ workflow {
                   )
                   ch_versions       = ch_versions.mix(BEDTOOLS_INTERSECT_PURECLIP.out.versions.first())
             }
-
+            // MACS2 peaks
             if (!params.skip_macs2) {
                   BEDTOOLS_INTERSECT_MACS2 (
                         'macs2',
@@ -396,8 +401,10 @@ workflow {
             }
       }
 
-      // homer annotatepeaks
+      // MODULE (adapted from nf-core)
+      // homer (gene) annotation of peak bed files
       if (!params.skip_homer_annotation) {
+            // for PureCLIP peaks
             if (!params.skip_pureclip){
                   HOMER_ANNOTATEPEAKS_PURECLIP (
                         'pureclip',
@@ -407,7 +414,7 @@ workflow {
                   )
                   ch_versions       = ch_versions.mix(HOMER_ANNOTATEPEAKS_PURECLIP.out.versions.first())
             }
-
+            // for MACS2 peaks
             if (!params.skip_macs2) {
                   HOMER_ANNOTATEPEAKS_MACS2 (
                         'macs2',
