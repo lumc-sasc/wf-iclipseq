@@ -1,4 +1,3 @@
 .nextflow*
 work/
-results*/
-published_iclip/
+*results/
