@@ -171,7 +171,7 @@ workflow {
       // MODULE SORTMERNA from nf-core and nf-core/rnaseq
       // filter out rRNA
       ch_sortmerna_multiqc          = Channel.empty()
-      ch_fastqc_filtered_multiqc = Channel.empty()
+      ch_fastqc_filtered_multiqc    = Channel.empty()
       ch_filtered_reads             = ch_trimmed_reads          // if rna filtering is skipped
 
       if (params.remove_ribo_rna) {
