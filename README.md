@@ -95,7 +95,7 @@ conda create -n nf_env
 conda activate nf_env
 ```
 
-You can install Nextflow using [Bioconda](https://bioconda.github.io/), after setting up the proper channels: `conda install -c bioconda nextflow`
+You can install Nextflow using [Bioconda](https://bioconda.github.io/), after setting up the proper channels: `conda install -c conda-forge -c bioconda nextflow`
 
 Or a specific version: `conda install -c bioconda nextflow=23.10.0`
 
@@ -155,13 +155,13 @@ gtf                        = "https://ftp.ensembl.org/pub/release-110/gtf/homo_s
 
 Finally, you can run the pipeline using the following command:
 ```
-nextflow run main.nf
+nextflow run main.nf -profile singularity
 ```
 If you are running from a different (sub)directory, make sure you point to the folder `main.nf` is located in. It is recommended to add the `-resume` command when partially rerunning the pipeline. You may also specify the output directory with the `--outdir` parameter.
 
 
 # Errors & Tips
-- exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the [conf/resources.config](conf/resources.config) file.
+- On SLURM, exit code 137 occurs when the memory limit of a process has been exceeded. For example, SortMeRNA (but also STAR) may run out of resources, especially if your sample is large (e.g. >2GB) and contains mostly rRNA (e.g. >70%) sequences you wish to filter out. You can increase these resources in the [conf/resources.config](conf/resources.config) file.
 - PureCLIP may cause an error. It is usually solved by simply rerunning using the `-resume` command.
 - Genome indexing is computationally expensive and time-consuming. Therefore, we recommend generating these files once by setting `save_reference` parameter in [conf/params.config](conf/params.config) to `true` and then simply running the pipeline as normal the first time/ This saves the indices in the results directory ('04_star/genome'). Afterwards, you can move/copy the STAR index folder to the `input/` folder and specify `star_index =  '/path/to/STAR/index/' in [conf/params.config](conf/params.config), for example: '$projectDir/input/genome/index/star'.
 
@@ -169,12 +169,16 @@ If you are running from a different (sub)directory, make sure you point to the f
 Possible improvements include:
 
 - Benchmarking with public iCLIP datasets
-- Including a test case and a tutorial
+- Including a test case
+- Including a list of parameters
 - Compatibility with other container runtimes (e.g. Docker, Appcontainer, conda) to improve accessibility (currently only Singularity is supported)
 - Testing and improving performance (runtime, speed, resources)
 - Error testing
 - Testing for different operating systems (has only been tested on Linux Ubuntu 22.04.3)
 - Defining computational requirements (has only been run on an HPC)
+- Specify some commands in its own process file instead of the config file
+- Optimize check_samplesheet.py further by implementing error raising (instead of an extra function
+- Rename 'fasta' parameter to 'reference_fasta'
 
 # Authors
 This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics from September 2023 to April 2024. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows. The paper by [Busch et al. 2020](https://www.sciencedirect.com/science/article/pii/S1046202318304948?via%3Dihub) was also used. See [CITATION.md](CITATION.md) file for a full list of references.

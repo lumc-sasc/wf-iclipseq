@@ -37,7 +37,7 @@ def print_error(error, context="Line", context_str=""):
 
 def check_samplesheet(file_in, file_out):
     """
-    This function checks that the samplesheet follows the following structure:
+    This function checks that the samplesheet follows any of the following structures:
 
     sample,fastq_1,fastq_2,control_bam, control_bai
     SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz,CONTROL.bam,CONTROL.bai
@@ -100,7 +100,7 @@ def check_samplesheet(file_in, file_out):
                 ## Check control_bam file extension
                 if control_bam:
                     if control_bam.find(" ") != -1:
-                        print_error("FastQ file contains spaces!", "Line", line)
+                        print_error("Bam file contains spaces!", "Line", line)
                     if not control_bam.endswith(".bam"):
                         print_error(
                             "Control bam file does not have extension '.bam'!",
@@ -111,10 +111,10 @@ def check_samplesheet(file_in, file_out):
                 ## Check control_bai extension
                 if control_bai:
                     if control_bai.find(" ") != -1:
-                        print_error("FastQ file contains spaces!", "Line", line)
+                        print_error("Bai file contains spaces!", "Line", line)
                     if not control_bai.endswith(".bai"):
                         print_error(
-                            "Control bam file does not have extension '.bai'!",
+                            "Control bai file does not have extension '.bai'!",
                             "Line",
                             line,
                         )                        

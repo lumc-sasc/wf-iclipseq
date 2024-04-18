@@ -31,8 +31,8 @@ Loading the peak annotation files, which were created by intersecting the peak b
 I loaded each file separately, but feel free to automate it if you have many files (I only had six). Make sure to set your work directory correctly to save the upcoming files in the right folders. You can also specify the path of your annotation data and the folder where you want to save your graphs below:
 
 ```{r}
-data_path = '/path/to/data/' # <- do not forget the last /
-save_path = '/path/to/save/figures/'
+data_path <- '/path/to/data/' # <- do not forget the last /
+save_path <- '/path/to/save/figures/'
 
 # this is how we will save our plots later:
 paste(save_path, 'name', sep='')
@@ -49,15 +49,15 @@ dir.create(paste(save_path, 'scatterplots', sep=''), showWarnings = FALSE)
 
 ```{r}
 # loading the peaks intersecting with regions annotated with the "gene" feature
-pureclip_gof_3 = read.delim(paste(data_path, "gof_3_peaks_in_genes_ann.bed", sep=''))
-pureclip_gof_4 = read.delim(paste(data_path, "gof_4_peaks_in_genes_ann.bed", sep=''))
-pureclip_gof_5 = read.delim(paste(data_path, "gof_5_peaks_in_genes_ann.bed", sep=''))
-pureclip_wt_3 = read.delim(paste(data_path, "wt_3_peaks_in_genes_ann.bed", sep=''))
-pureclip_wt_4 = read.delim(paste(data_path, "wt_4_peaks_in_genes_ann.bed", sep=''))
-pureclip_wt_5 = read.delim(paste(data_path, "wt_5_peaks_in_genes_ann.bed", sep=''))
+pureclip_gof_3 <- read.delim(paste(data_path, "gof_3_peaks_in_genes_ann.bed", sep=''))
+pureclip_gof_4 <- read.delim(paste(data_path, "gof_4_peaks_in_genes_ann.bed", sep=''))
+pureclip_gof_5 <- read.delim(paste(data_path, "gof_5_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_3 <- read.delim(paste(data_path, "wt_3_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_4 <- read.delim(paste(data_path, "wt_4_peaks_in_genes_ann.bed", sep=''))
+pureclip_wt_5 <- read.delim(paste(data_path, "wt_5_peaks_in_genes_ann.bed", sep=''))
 
 # all tables to be combined later
-dfs = list(pureclip_gof_3 , pureclip_gof_4, pureclip_gof_5, pureclip_wt_3, pureclip_wt_4, 
+dfs <- list(pureclip_gof_3 , pureclip_gof_4, pureclip_gof_5, pureclip_wt_3, pureclip_wt_4, 
            pureclip_wt_5)
 names <- c("gof_1" ,"gof_2", "gof_3", "wt_1", "wt_2", "wt_3")
 ```
@@ -66,8 +66,8 @@ names <- c("gof_1" ,"gof_2", "gof_3", "wt_1", "wt_2", "wt_3")
 
 ```{r}
 # joining all tables in a single dataframe
-count = 1
-df_combined = data.frame()
+count <- 1
+df_combined <- data.frame()
 
 for (df in dfs){
   # add sample name
@@ -145,10 +145,10 @@ Including total peak counts (boxplots), feature distribution (exons, CDS, gene, 
 
 ```{r}
 # import annotated table
-df_combined = read.csv(paste(save_path, "gene_annotations.csv", sep=''))
+df_combined <- read.csv(paste(save_path, "gene_annotations.csv", sep=''))
 
 # make a copy of df_combined just in case
-df_copy = copy(df_combined)
+df_copy <- copy(df_combined)
 ```
 
 ## Total peak count (Boxplot)
@@ -191,21 +191,21 @@ ggsave(paste(save_path, "boxplots/pureclip_raw_peak_count.png", sep=''))
 Distribution of features that intersected with the peak bed file. The goal is to ensure 1 peak is associated with 1 feature and not several features. The priority order we enforce is CDS \> 5' UTR \> 3' UTR \> intron. This order was already incorporated in the .sh by merging the peak bed files in this exact order.
 
 ```{r echo=FALSE, fig.align="center", fig.height=5, fig.width=9, message=FALSE, warning=FALSE}
-p <- '/exports/sascstudent/amhsilie/iclip_downstream/gtfs/'
+p <- '/path/to/bedtools/intersection/bed/files/'
 
-gof_3 = read.delim(paste(p, "gof_3_merged.bed", sep=''))
-gof_4 = read.delim(paste(p, "gof_4_merged.bed", sep=''))
-gof_5 = read.delim(paste(p, "gof_5_merged.bed", sep=''))
-wt_3 = read.delim(paste(p, "wt_3_merged.bed", sep=''))
-wt_4 = read.delim(paste(p, "wt_4_merged.bed", sep=''))
-wt_5 = read.delim(paste(p, "wt_5_merged.bed", sep=''))
+gof_3 <- read.delim(paste(p, "gof_3_merged.bed", sep=''))
+gof_4 <- read.delim(paste(p, "gof_4_merged.bed", sep=''))
+gof_5 <- read.delim(paste(p, "gof_5_merged.bed", sep=''))
+wt_3 <- read.delim(paste(p, "wt_3_merged.bed", sep=''))
+wt_4 <- read.delim(paste(p, "wt_4_merged.bed", sep=''))
+wt_5 <- read.delim(paste(p, "wt_5_merged.bed", sep=''))
 
 # all tables to be combined later
-dfs = list(gof_3 , gof_4, gof_5, wt_3, wt_4, wt_5)
+dfs <- list(gof_3 , gof_4, gof_5, wt_3, wt_4, wt_5)
 names <- c("gof_1" ,"gof_2", "gof_3", "wt_1", "wt_2", "wt_3")
 
-count = 1
-df_features = data.table()
+count <- 1
+df_features <- data.table()
 
 # merge tables
 for (df in dfs){
@@ -313,8 +313,8 @@ genes[c("sample","gene_id","peak_count", "gene_length")] %>%
 We will be taking a look at how many peaks are present in the genes. We also check how many genes are left if we assign peaks in a one-to-one manner (aka no overlaps allowed), instead of one-to-(possibly)-many.
 
 ```{r fig.width=10, message=FALSE, warning=FALSE}
-binwidth = 1
-cutoff = 1 
+binwidth <- 1
+cutoff <- 1 
 
 # how many genes have a certain peak count?
 genes[c("sample","gene_id","peak_count")] %>%
@@ -457,7 +457,7 @@ We can compare the genes based on e.g. normalized peak count by plotting gain-of
 # average normalized peak count of gene_id is plotted
 # x-axis: WT peak count
 # y-axis GOF peak count
-cutoff = 0
+cutoff <- 0
 
 # create new df with peak counts per sample for each gene
 couples <- genes %>% 

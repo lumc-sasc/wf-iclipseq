@@ -101,7 +101,7 @@ workflow {
 
       // check if mandatory input path parameters exist
       check_params = [
-            samplesheet: params.samplesheet,    // sheet with sample information
+            samplesheet: params.samplesheet,
             fasta: params.fasta,                // reference genome
             gtf: params.gtf                     // gene annotation
       ]
@@ -113,8 +113,6 @@ workflow {
                   file(param.value, checkIfExists: true)
             }
       }
-
-      // empty channel for versions
       ch_versions            = Channel.empty()
 
       /*

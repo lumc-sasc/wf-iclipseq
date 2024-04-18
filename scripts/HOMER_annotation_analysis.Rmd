@@ -32,9 +32,9 @@ Loading the HOMER annotation files. I load each file separately (which is less c
 
 ```{r}
 # path to data
-general_path = '/path/to/data/' # <- do not forget the last /
+general_path <- '/path/to/data/' # <- do not forget the last /
 # path to save figures to
-save_path = '/path/to/save/figures/' # <- do not forget the last /
+save_path <- '/path/to/save/figures/' # <- do not forget the last /
 
 # this is how we will save our plots later:
 paste(save_path, 'name', sep='')
@@ -43,22 +43,22 @@ paste(save_path, 'name', sep='')
 If a directory does not exist yet, **Rstudio will ask you whether you want to it to create the directory for you *in the console!***
 
 ```{r}
-macs_gof_3 = read.delim(paste(general_path, "macs2_gof_3_T1_annotatePeaks.txt", sep=''))
-macs_gof_4 = read.delim(paste(general_path, "macs2_gof_4_T1_annotatePeaks.txt", sep=''))
-macs_gof_5 = read.delim(paste(general_path, "macs2_gof_5_T1_annotatePeaks.txt", sep=''))
-macs_wt_3 = read.delim(paste(general_path, "macs2_wt_3_T1_annotatePeaks.txt", sep=''))
-macs_wt_4 = read.delim(paste(general_path, "macs2_wt_4_T1_annotatePeaks.txt", sep=''))
-macs_wt_5 = read.delim(paste(general_path, "macs2_wt_5_T1_annotatePeaks.txt", sep=''))
+macs_gof_3 <- read.delim(paste(general_path, "macs2_gof_3_T1_annotatePeaks.txt", sep=''))
+macs_gof_4 <- read.delim(paste(general_path, "macs2_gof_4_T1_annotatePeaks.txt", sep=''))
+macs_gof_5 <- read.delim(paste(general_path, "macs2_gof_5_T1_annotatePeaks.txt", sep=''))
+macs_wt_3 <- read.delim(paste(general_path, "macs2_wt_3_T1_annotatePeaks.txt", sep=''))
+macs_wt_4 <- read.delim(paste(general_path, "macs2_wt_4_T1_annotatePeaks.txt", sep=''))
+macs_wt_5 <- read.delim(paste(general_path, "macs2_wt_5_T1_annotatePeaks.txt", sep=''))
 
-pureclip_gof_3 = read.delim(paste(general_path, "pureclip_gof_3_T1_annotatePeaks.txt", sep=''))
-pureclip_gof_4 = read.delim(paste(general_path, "pureclip_gof_4_T1_annotatePeaks.txt", sep=''))
-pureclip_gof_5 = read.delim(paste(general_path, "pureclip_gof_5_T1_annotatePeaks.txt", sep=''))
-pureclip_wt_3 = read.delim(paste(general_path, "pureclip_wt_3_T1_annotatePeaks.txt", sep=''))
-pureclip_wt_4 = read.delim(paste(general_path, "pureclip_wt_4_T1_annotatePeaks.txt", sep=''))
-pureclip_wt_5 = read.delim(paste(general_path, "pureclip_wt_5_T1_annotatePeaks.txt", sep=''))
+pureclip_gof_3 <- read.delim(paste(general_path, "pureclip_gof_3_T1_annotatePeaks.txt", sep=''))
+pureclip_gof_4 <- read.delim(paste(general_path, "pureclip_gof_4_T1_annotatePeaks.txt", sep=''))
+pureclip_gof_5 <- read.delim(paste(general_path, "pureclip_gof_5_T1_annotatePeaks.txt", sep=''))
+pureclip_wt_3 <- read.delim(paste(general_path, "pureclip_wt_3_T1_annotatePeaks.txt", sep=''))
+pureclip_wt_4 <- read.delim(paste(general_path, "pureclip_wt_4_T1_annotatePeaks.txt", sep=''))
+pureclip_wt_5 <- read.delim(paste(general_path, "pureclip_wt_5_T1_annotatePeaks.txt", sep=''))
 
 # all tables to be combined later
-dfs = list( #macs_gof_3, macs_gof_4, macs_gof_5, macs_wt_3, macs_wt_4, macs_wt_5, 
+dfs <- list( #macs_gof_3, macs_gof_4, macs_gof_5, macs_wt_3, macs_wt_4, macs_wt_5, 
            pureclip_gof_3, pureclip_gof_4, pureclip_gof_5, pureclip_wt_3, pureclip_wt_4, pureclip_wt_5)
 names <- c( # "macs_gof_3", "macs_gof_4", "macs_gof_5", "macs_wt_3", "macs_wt_4", "macs_wt_5",
            "pureclip_gof_3", "pureclip_gof_4", "pureclip_gof_5", "pureclip_wt_3", "pureclip_wt_4", "pureclip_wt_5")
@@ -68,8 +68,8 @@ names <- c( # "macs_gof_3", "macs_gof_4", "macs_gof_5", "macs_wt_3", "macs_wt_4"
 
 ```{r}
 # joining all tables in a single dataframe
-count = 1
-df_combined = data.frame()
+count <- 1
+df_combined <- data.frame()
 
 for (df in dfs){
   # add sample name
@@ -306,8 +306,8 @@ write.table(wt_only, file=paste(save_path, "genes/wt_only_gene_list.txt", sep=''
 Frequency of crosslink counts (in this case 1 peak = 1 crosslink) in a gene region.
 
 ```{r fig.width=10, message=FALSE, warning=FALSE}
-binwidth = 1
-cutoff = 1 
+binwidth <- 1
+cutoff <- 1 
 
 df_combined[c("sample", "Entrez.ID", "peak_count")] %>%
   distinct() %>%
@@ -449,7 +449,7 @@ We can compare the genes based on e.g. normalized peak count by plotting gain-of
 # y-axis GOF avg peak intensity
 
 # this time, we only want entrez.IDs with a peak count equal to or higher than cutoff
-cutoff = 1
+cutoff <- 1
 df_filtered <- df_combined[df_combined$peak_count >= cutoff,]
 
 # create new df with norm peak counts per sample for each gene
