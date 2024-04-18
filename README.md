@@ -177,8 +177,9 @@ Possible improvements include:
 - Testing for different operating systems (has only been tested on Linux Ubuntu 22.04.3)
 - Defining computational requirements (has only been run on an HPC)
 - Specify some commands in its own process file instead of the config file
-- Optimize check_samplesheet.py further by implementing error raising (instead of an extra function
+- Optimize check_samplesheet.py further by implementing error raising (instead of an extra function)
 - Rename 'fasta' parameter to 'reference_fasta'
+- Potentially exclude nf-core modules and subworkflows from the pipeline itself (downloadable by user), although this does not seem to be custom
 
 # Authors
 This pipeline was originally made by Amarise Silié ([@amarisesilie](https://github.com/amarisesilie)) for her MSc internship in Bioinformatics from September 2023 to April 2024. The pipeline uses modules and subworkflows from [nf-core](https://github.com/nf-core/modules), [nf-core/rnaseq](https://github.com/nf-core/rnaseq) and [goodwright/clipseq](https://github.com/goodwright/clipseq) in addition to local modules and subworkflows. The paper by [Busch et al. 2020](https://www.sciencedirect.com/science/article/pii/S1046202318304948?via%3Dihub) was also used. See [CITATION.md](CITATION.md) file for a full list of references.
